@@ -8,10 +8,9 @@ parameters before starting the DAMON module (e.g., DAMON_RECLAIM,
 DAMON_LRU_SORT).
 
 ## Auto-tune temperature ([cold_]min_age)
-SeongJae Park [1] (DAMON Maintainer) has added many excellent
-auto-tuning mechanisms to the DAMON core. However, most of them only
-control the quota, rather than more accurately determining hot and cold
-memory.
+There's many execellent auto-tunning machanism in DAMON core. However,
+most of them only control the quota, rather than more accurately
+determining hot and cold memory.
 
 I want to use this repository to achieve more precise dynamic
 determination of cold memory. This is just a user program, not a
