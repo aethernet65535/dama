@@ -5,6 +5,11 @@
 #
 # This test is only for auto-tune min_age.
 
+if [ "$(id -u)" -ne 0 ]; then
+  echo "please run as root"
+  exit 1
+fi
+
 pkill -x dama
 pkill stress-ng
 pkill sar
