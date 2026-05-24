@@ -1,0 +1,7 @@
+Linux 7.0.9-arch2-1 (archlinux) 	05/23/2026 	_x86_64_	(4 CPU)
+
+05:48:16 PM kbmemfree   kbavail kbmemused  %memused kbbuffers  kbcached  kbcommit   %commit  kbactive   kbinact   kbdirty   kbshmem
+05:48:21 PM   1407600   1453852   6451972     81.61      2556    259256   6414432     23.34   6237048     61344      1428      3892
+05:48:26 PM   1390524   1436732   6469092     81.83      2556    259228   6414432     23.34   6237064     61300      1384      3892
+
+Average:      1399062   1445292   6460532     81.72      2556    259242   6414432     23.34   6237056     61322      1406      3892

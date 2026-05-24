@@ -1,0 +1,24 @@
+#define CONFIG_LOG_ENABLED (1)
+#define CONFIG_DEBUG_ENABLED (1)
+#define CONFIG_UNIT_TEST (0)
+
+#define MS_US (1000U)
+#define SEC_US (1000U * MS_US)
+#define MIN_US (60U * SEC_US)
+
+#define UDAMOND_SLEEP_US (5U * SEC_US)
+#define STEP_BASE (MS_US)
+
+#define MIN_MIN_AGE (10U * SEC_US)
+#define MAX_MIN_AGE (10U * MIN_US)
+#define MAX_NO_DECREASE (10)
+
+#define MIN_AGE_FACTOR (80)
+#define ANON_REFAULT_WEIGHT (3)
+#define FILE_REFAULT_WEIGHT (1)
+
+#define INCREASE_THRESHOLD (40)
+#define DECREASE_THRESHOLD (20)
+
+#define INCREASE_BASE (200)
+#define DECREASE_BASE (200)
