@@ -34,22 +34,20 @@ struct sysfs_param {
 	unsigned long min_age;
 };
 
-struct psi {
-	unsigned long some_avg10, some_avg60, some_avg300;
-	unsigned long full_avg10, full_avg60, full_avg300;
-	unsigned long long some_total, full_total;
-};
-
 struct wmarks {
 	unsigned long high, mid, low;
+};
+
+struct psi {
+       unsigned long some_avg10, some_avg60, some_avg300;
+       unsigned long full_avg10, full_avg60, full_avg300;
+       unsigned long long some_total, full_total;
 };
 
 struct damon_info {
 	unsigned int damon_module;
 	struct sysfs_param *stats;
-	struct psi *psi_cpu;
-	struct psi *psi_io;
-	struct psi *psi_mem;
+	struct ma_calc *ma_calc;
 	struct wmarks wmarks;
 };
 

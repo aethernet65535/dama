@@ -189,16 +189,8 @@ void *alloc_damon_info(void)
 	if (!damon_info->stats)
 		return ret;
 
-	damon_info->psi_cpu = malloc(sizeof(struct psi));
-	if (!damon_info->psi_cpu)
-		return ret;
-
-	damon_info->psi_io = malloc(sizeof(struct psi));
-	if (!damon_info->psi_io)
-		return ret;
-
-	damon_info->psi_mem = malloc(sizeof(struct psi));
-	if (!damon_info->psi_mem)
+	damon_info->ma_calc = malloc(sizeof(struct ma_calc));
+	if (!damon_info->ma_calc)
 		return ret;
 
 	return damon_info;
@@ -520,7 +512,6 @@ int udamond_fn(struct damon_info *info)
 	bool is_in_kdamond_watermark;
 	unsigned long nr_dec = 0, nr_inc = 0, no_dec = 0;
 	unsigned long memtotal, memfree;
-	struct ma_calc ma_calc = {};
 	char *module_name;
 
 	if (!info)
@@ -546,7 +537,7 @@ int udamond_fn(struct damon_info *info)
 		if (!is_in_kdamond_watermark)
 			goto rest;
 
-		if (min_age_calc(&nr_inc, &nr_dec, &ma_calc,
+		if (min_age_calc(&nr_inc, &nr_dec, info->ma_calc,
 				 info->damon_module))
 			goto done;
 
