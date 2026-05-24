@@ -45,4 +45,3 @@ Test:
     sleep 1h
 
     stress-ng --vm 1 --vm-bytes $((5 * 386))M --vm-hang 5 --vm-keep --timeout=1h
-
