@@ -4,7 +4,7 @@ formal one is "大吗？" (dà ma, meaning "is it big?").
 
 # What dama do?
 DAMA's only current feature is 'min_age' auto-tune, and it is only
-intended to serve DAMON_RECLAIM and DAMON_LRU_SORT.
+intended to serve DAMON_RECLAIM.
 
 ## Result
 ```txt
