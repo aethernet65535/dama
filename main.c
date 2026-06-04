@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
-#include "log.h"
-#include "sysfs.h"
 #include "core.h"
+#include "sysfs.h"
+#include "log.h"
 #include "config.h"
 
 int main(void)

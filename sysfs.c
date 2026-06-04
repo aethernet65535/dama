@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/sysinfo.h>
-#include "log.h"
 #include "core.h"
 #include "sysfs.h"
+#include "log.h"
 
 int write_sysfs_ulong(const char *path, unsigned long val)
 {

@@ -1,6 +1,4 @@
 #include <stdbool.h>
-#include "core.h"
-#include "log.h"
 
 int write_sysfs_ulong(const char *path, unsigned long val);
 int write_sysfs_int(const char *path, int val);

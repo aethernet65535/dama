@@ -1,12 +1,24 @@
-#include <errno.h>
+#include <sys/param.h>
+#include <sys/time.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
 #include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
 #include "core.h"
 #include "sysfs.h"
+#include "log.h"
+
+unsigned long times = 0;
+
+unsigned long gettime_us(void)
+{
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	return tv.tv_usec;
+}
 
 bool strtobool(const char *str)
 {
@@ -108,8 +120,8 @@ int damon_commit_params(const char *module_name)
 	return damon_write_bool(module_name, "commit_inputs", true);
 }
 
-int read_damon_nr_passed(unsigned int damon_module,
-			 unsigned long *damon_nr_passed)
+int read_damon_nr_applied(unsigned int damon_module,
+			  unsigned long *damon_nr_applied)
 {
 	char *module_name;
 
@@ -118,12 +130,12 @@ int read_damon_nr_passed(unsigned int damon_module,
 
 	if (damon_module == DAMON_RECLAIM) {
 		if (damon_read_ulong(module_name, "bytes_reclaimed_regions",
-				     damon_nr_passed))
+				     damon_nr_applied))
 			return -1;
 	} else if (damon_module == DAMON_LRU_SORT) {
 		if (damon_read_ulong(module_name,
 				     "bytes_lru_sorted_cold_regions",
-				     damon_nr_passed))
+				     damon_nr_applied))
 			return -1;
 	}
 
@@ -135,7 +147,7 @@ bool is_supported_module(unsigned int damon_module)
 	if (damon_module == DAMON_RECLAIM)
 		return true;
 	else if (damon_module == DAMON_LRU_SORT)
-		return true;
+		return false;
 	else
 		return false;
 }
@@ -211,34 +223,56 @@ int module_to_min_age(unsigned int damon_module, char **min_age)
 	return 0;
 }
 
-unsigned long inc_min_age(unsigned int damon_module, unsigned long step)
+int get_min_age(unsigned int damon_module, unsigned long *min_age)
 {
-	unsigned long min_age;
-	unsigned long limit = MAX_MIN_AGE;
-	char *module_name;
-	char *min_age_name;
+	char *min_age_name = NULL;
+	char *module_name = NULL;
 
 	if (module_to_name(damon_module, &module_name))
 		return -1;
 	if (module_to_min_age(damon_module, &min_age_name))
 		return -1;
-	if (!step)
-		return -1;
-	if (damon_read_ulong(module_name, min_age_name, &min_age))
+	if (damon_read_ulong(module_name, min_age_name, min_age))
 		return -1;
 
-	/* Overflow */
-	if (min_age + step > limit)
-		min_age = limit;
-	else
-		min_age += step;
+	return 0;
+}
 
+int write_min_age(unsigned int damon_module, unsigned long min_age)
+{
+	char *min_age_name = NULL;
+	char *module_name = NULL;
+
+	if (module_to_name(damon_module, &module_name))
+		return -1;
+	if (module_to_min_age(damon_module, &min_age_name))
+		return -1;
 	if (damon_write_ulong(module_name, min_age_name, min_age))
 		return -1;
 	if (damon_commit_params(module_name))
 		return -1;
 
-	pr_time("inc_min_age(): %lu\n", min_age);
+	return 0;
+}
+
+unsigned long inc_min_age(unsigned int damon_module, unsigned long step)
+{
+	unsigned long min_age;
+
+	if (!step)
+		return -1;
+	if (get_min_age(damon_module, &min_age))
+		return -1;
+
+	if (min_age + step < min_age)
+		min_age = MAX_MIN_AGE;
+	else
+		min_age = min(MAX_MIN_AGE, min_age + step);
+
+	if (write_min_age(damon_module, min_age))
+		return -1;
+
+	pr_time("[%lu] inc_min_age(): %lu\n", times, min_age);
 
 	return 0;
 }
@@ -246,31 +280,22 @@ unsigned long inc_min_age(unsigned int damon_module, unsigned long step)
 unsigned long dec_min_age(unsigned int damon_module, unsigned long step)
 {
 	unsigned long min_age;
-	unsigned long limit = MIN_MIN_AGE;
-	char *module_name;
-	char *min_age_name;
 
-	if (module_to_name(damon_module, &module_name))
-		return -1;
-	if (module_to_min_age(damon_module, &min_age_name))
-		return -1;
 	if (!step)
 		return -1;
-	if (damon_read_ulong(module_name, min_age_name, &min_age))
+	if (get_min_age(damon_module, &min_age))
 		return -1;
 
 	/* Underflow */
-	if (min_age - step > limit)
-		min_age = limit;
+	if (min_age - step > min_age)
+		min_age = MIN_MIN_AGE;
 	else
-		min_age -= step;
+		min_age = max(MIN_MIN_AGE, min_age - step);
 
-	if (damon_write_ulong(module_name, min_age_name, min_age))
-		return -1;
-	if (damon_commit_params(module_name))
+	if (write_min_age(damon_module, min_age))
 		return -1;
 
-	pr_time("dec_min_age(): %lu\n", min_age);
+	pr_time("[%lu] dec_min_age(): %lu\n", times, min_age);
 
 	return 0;
 }
@@ -281,34 +306,29 @@ unsigned long dec_min_age(unsigned int damon_module, unsigned long step)
  * @dec: address to get the step of decrease.
  * @ctx: address to save the context.
  *
- * Algorithm (TLDR)
- * ================
- *
- * Decrease:
- * When the refault is lower than DECREASE_THRESHOLD, the 'min_age' will
- * decrease until 'pgsteal' or 'refault' equals zero.
- *
- * Increase:
- * When the refault is greater than INCREASE_THRESHOLD, the 'min_age' will
- * increase until 'ctx->nr_damon_passed' or 'refault' equals zero.
- *
  * Note that, refault is not only caused by DAMON/Direct/Kswapd reclaimation.
- * 
  */
-int reclaim_min_age_calc(unsigned long *inc, unsigned long *dec, struct ma_calc *ctx)
+int reclaim_min_age_calc(unsigned long *inc, unsigned long *dec,
+			 struct ma_calc *ctx)
 {
+	unsigned long delta_kswapd_reclaimed = 0;
+	unsigned long delta_direct_reclaimed = 0;
 	unsigned long total_kswapd_reclaimed = 0;
 	unsigned long total_direct_reclaimed = 0;
-	unsigned long total_nr_damon_passed = 0;
+	unsigned long total_nr_damon_applied = 0;
+	unsigned long delta_damon_reclaimed = 0;
 	unsigned long total_refault_anon = 0;
 	unsigned long total_refault_file = 0;
-	unsigned long pgsteal;
-	unsigned long refault = 0;
-	unsigned long factor, nr_dec = 0, nr_inc = 0;
+	unsigned long refault_weighted = 0;
+	unsigned long damon_reclaimed = 0;
+	unsigned long delta_pgsteal = 0;
 	unsigned long percentage = 0;
-	int ret = -1;
+	unsigned long pgsteal = 0;
+	unsigned long min_age = 0;
+	unsigned long nr_inc = 0;
+	unsigned long nr_dec = 0;
+	unsigned long diff = 0;
 
-	factor = MIN_AGE_FACTOR;
 	ctx->anon_weight = ANON_REFAULT_WEIGHT;
 	ctx->file_weight = FILE_REFAULT_WEIGHT;
 
@@ -318,10 +338,10 @@ int reclaim_min_age_calc(unsigned long *inc, unsigned long *dec, struct ma_calc 
 		goto done;
 	if (read_steal(&total_kswapd_reclaimed, &total_direct_reclaimed))
 		goto done;
-	if (read_damon_nr_passed(DAMON_RECLAIM, &total_nr_damon_passed))
+	if (read_damon_nr_applied(DAMON_RECLAIM, &total_nr_damon_applied))
 		goto done;
 
-	total_nr_damon_passed = total_nr_damon_passed / PAGE_SIZE;
+	total_nr_damon_applied = total_nr_damon_applied / PAGE_SIZE;
 
 	if (!ctx->init)
 		goto update;
@@ -329,167 +349,116 @@ int reclaim_min_age_calc(unsigned long *inc, unsigned long *dec, struct ma_calc 
 	ctx->refault_anon += total_refault_anon - ctx->last_refault_anon;
 	ctx->refault_file += total_refault_file - ctx->last_refault_file;
 
-	ctx->kswapd_reclaimed +=
+	delta_kswapd_reclaimed =
 		total_kswapd_reclaimed - ctx->last_kswapd_reclaimed;
-	ctx->direct_reclaimed +=
+	delta_direct_reclaimed =
 		total_direct_reclaimed - ctx->last_direct_reclaimed;
-	ctx->nr_damon_passed +=
-		total_nr_damon_passed - ctx->last_nr_damon_passed;
+	delta_pgsteal = delta_kswapd_reclaimed + delta_direct_reclaimed;
+	ctx->kswapd_reclaimed += delta_kswapd_reclaimed;
+	ctx->direct_reclaimed += delta_direct_reclaimed;
+	pgsteal = ctx->kswapd_reclaimed + ctx->direct_reclaimed;
+	ctx->remaining_pgsteal += delta_pgsteal;
 
-	refault = (ctx->refault_anon * ctx->anon_weight) +
-		  (ctx->refault_file * ctx->file_weight);
+	delta_damon_reclaimed =
+		total_nr_damon_applied - ctx->last_nr_damon_applied;
+	ctx->nr_damon_applied += delta_damon_reclaimed;
+	damon_reclaimed = ctx->nr_damon_applied;
+	ctx->remaining_damon += delta_damon_reclaimed;
 
-	if (!refault)
+	refault_weighted = (ctx->refault_anon * ctx->anon_weight) +
+			   (ctx->refault_file * ctx->file_weight);
+
+	if (!refault_weighted)
 		goto update;
-	if (!ctx->kswapd_reclaimed && !ctx->direct_reclaimed &&
-	    !ctx->nr_damon_passed)
+	if (!pgsteal && !damon_reclaimed)
 		goto update;
+	if (get_min_age(DAMON_RECLAIM, &min_age))
+		goto done;
 
-	/* DAMON - Increase */
-	do {
-		if (!ctx->nr_damon_passed)
-			break;
+	/* 
+	 * DAMON - Increase
+	 *
+	 * To ensure that DAMA can determine the cause of most
+	 * refaults as accurately as possible, DAMA will decay the
+	 * 'ctx->remaining_{*}' of another "reclaim group" as quickly
+	 * as possible, and slowly decay its own 'ctx->remaining_{*}'.
+	 */
+	if (ctx->remaining_damon >= DAMON_THRESHOLD && damon_reclaimed) {
+		ctx->remaining_damon =
+			PERCENT(ctx->remaining_damon, WORKING_FACTOR);
+		ctx->remaining_pgsteal =
+			min(PGSTEAL_THRESHOLD, PERCENT(ctx->remaining_pgsteal,
+						       NOT_WORKING_FACTOR));
+		percentage = (refault_weighted * 100) / damon_reclaimed;
+		if (percentage > INCREASE_THRESHOLD) {
+			pr_time("[%lu] percentage-damon: %lu\n", times,
+				percentage);
+			diff = (percentage - INCREASE_THRESHOLD);
+			nr_inc = PERCENT(min_age, diff);
+			goto fade;
+		}
+	}
 
-		refault = (ctx->refault_anon * ctx->anon_weight) +
-			  (ctx->refault_file * ctx->file_weight);
-		percentage = (refault * 100) / ctx->nr_damon_passed;
-		if (!(percentage >= INCREASE_THRESHOLD))
-			break;
+	/* KSWAPD+DIRECT - Decrase */
+	if (ctx->remaining_pgsteal >= PGSTEAL_THRESHOLD && pgsteal) {
+		ctx->remaining_pgsteal =
+			PERCENT(ctx->remaining_pgsteal, WORKING_FACTOR);
+		ctx->remaining_damon =
+			min(DAMON_THRESHOLD,
+			    PERCENT(ctx->remaining_damon, NOT_WORKING_FACTOR));
+		percentage = (refault_weighted * 100) / pgsteal;
+		if (percentage < DECREASE_THRESHOLD) {
+			pr_time("[%lu] percentage-system: %lu\n", times,
+				percentage);
+			diff = (DECREASE_THRESHOLD - percentage);
+			nr_dec = PERCENT(min_age, diff);
+			goto fade;
+		}
+	}
 
-		ctx->nr_damon_passed = PERCENT(ctx->nr_damon_passed, factor);
-		ctx->kswapd_reclaimed = PERCENT(ctx->kswapd_reclaimed, factor);
-		ctx->direct_reclaimed = PERCENT(ctx->direct_reclaimed, factor);
-		ctx->refault_anon = PERCENT(ctx->refault_anon, factor);
-		ctx->refault_file = PERCENT(ctx->refault_file, factor);
-		nr_inc += INCREASE_BASE;
-	} while (percentage >= INCREASE_THRESHOLD);
-
-	if (nr_inc)
-		goto update;
-
-	/* KSWAPD + DIRECT - Decrease */
-	do {
+	goto update;
+fade:
+	/*
+	 * Keep the amount of reclaim and the amount of refault
+	 * decaying at the same rate.
+	 */
+	while (true) {
+		refault_weighted = ctx->refault_anon + ctx->refault_file;
+		damon_reclaimed = ctx->nr_damon_applied;
 		pgsteal = ctx->kswapd_reclaimed + ctx->direct_reclaimed;
-		if (!pgsteal)
+
+		if (!refault_weighted || !pgsteal || !damon_reclaimed)
 			break;
 
-		refault = (ctx->refault_anon * ctx->anon_weight) +
-			  (ctx->refault_file * ctx->file_weight);
-		percentage = (refault * 100) / pgsteal;
-		if (!(percentage <= DECREASE_THRESHOLD))
-			break;
+		ctx->nr_damon_applied =
+			PERCENT(ctx->nr_damon_applied, FADE_FACTOR);
+		ctx->kswapd_reclaimed =
+			PERCENT(ctx->kswapd_reclaimed, FADE_FACTOR);
+		ctx->direct_reclaimed =
+			PERCENT(ctx->direct_reclaimed, FADE_FACTOR);
+		ctx->refault_anon = PERCENT(ctx->refault_anon, FADE_FACTOR);
+		ctx->refault_file = PERCENT(ctx->refault_file, FADE_FACTOR);
+	}
 
-		ctx->nr_damon_passed = PERCENT(ctx->nr_damon_passed, factor);
-		ctx->kswapd_reclaimed = PERCENT(ctx->kswapd_reclaimed, factor);
-		ctx->direct_reclaimed = PERCENT(ctx->direct_reclaimed, factor);
-		ctx->refault_anon = PERCENT(ctx->refault_anon, factor);
-		ctx->refault_file = PERCENT(ctx->refault_file, factor);
-		nr_dec += DECREASE_BASE;
-	} while (percentage <= DECREASE_THRESHOLD);
-
+	/* 
+	 * DAMA should discard refaults data as much as possible
+	 * to avoid inaccurate interference from this data in
+	 * the next calculation.
+	 */
+	ctx->refault_anon = 0;
+	ctx->refault_file = 0;
 update:
 	ctx->last_kswapd_reclaimed = total_kswapd_reclaimed;
 	ctx->last_direct_reclaimed = total_direct_reclaimed;
-	ctx->last_nr_damon_passed = total_nr_damon_passed;
+	ctx->last_nr_damon_applied = total_nr_damon_applied;
 	ctx->last_refault_anon = total_refault_anon;
 	ctx->last_refault_file = total_refault_file;
 	*inc = nr_inc;
 	*dec = nr_dec;
 	ctx->init = true;
-	ret = 0;
+	return 0;
 done:
-	return ret;
-}
-
-/* Testing... */
-int lru_min_age_calc(unsigned long *inc, unsigned long *dec, struct ma_calc *ctx)
-{
-	unsigned long total_kswapd_reclaimed = 0;
-	unsigned long total_direct_reclaimed = 0;
-	unsigned long total_nr_damon_passed = 0;
-	unsigned long total_refault_anon = 0;
-	unsigned long total_refault_file = 0;
-	unsigned long pgsteal;
-	unsigned long refault = 0;
-	unsigned long factor, nr_dec = 0, nr_inc = 0;
-	unsigned long percentage_refault = 0, percentage_passed = 0;
-	int ret = -1;
-
-	factor = MIN_AGE_FACTOR;
-	ctx->anon_weight = ANON_REFAULT_WEIGHT;
-	ctx->file_weight = FILE_REFAULT_WEIGHT;
-
-	if (!inc || !dec)
-		goto done;
-	if (read_refault(&total_refault_anon, &total_refault_file))
-		goto done;
-	if (read_steal(&total_kswapd_reclaimed, &total_direct_reclaimed))
-		goto done;
-	if (read_damon_nr_passed(DAMON_LRU_SORT, &total_nr_damon_passed))
-		goto done;
-
-	total_nr_damon_passed = total_nr_damon_passed / PAGE_SIZE;
-
-	if (!ctx->init)
-		goto update;
-
-	ctx->refault_anon += total_refault_anon - ctx->last_refault_anon;
-	ctx->refault_file += total_refault_file - ctx->last_refault_file;
-
-	ctx->kswapd_reclaimed +=
-		total_kswapd_reclaimed - ctx->last_kswapd_reclaimed;
-	ctx->direct_reclaimed +=
-		total_direct_reclaimed - ctx->last_direct_reclaimed;
-	ctx->nr_damon_passed +=
-		total_nr_damon_passed - ctx->last_nr_damon_passed;
-
-	refault = (ctx->refault_anon * ctx->anon_weight) +
-		  (ctx->refault_file * ctx->file_weight);
-
-	if (!refault)
-		goto update;
-	if (!ctx->kswapd_reclaimed && !ctx->direct_reclaimed &&
-	    !ctx->nr_damon_passed)
-		goto update;
-
-	ctx->nr_damon_passed = PERCENT(ctx->nr_damon_passed, factor);
-
-	do {
-		pgsteal = ctx->kswapd_reclaimed + ctx->direct_reclaimed;
-		if (!pgsteal)
-			break;
-
-		refault = (ctx->refault_anon * ctx->anon_weight) +
-			  (ctx->refault_file * ctx->file_weight);
-		percentage_refault = (refault * 100) / pgsteal;
-		if (!(percentage_refault >= INCREASE_THRESHOLD))
-			break;
-
-		percentage_passed = (ctx->nr_damon_passed * 100) / pgsteal;
-		if (percentage_passed >= INCREASE_THRESHOLD)
-			nr_inc += INCREASE_BASE;
-		else
-			nr_dec += DECREASE_BASE;
-
-		ctx->nr_damon_passed = PERCENT(ctx->nr_damon_passed, factor);
-		ctx->kswapd_reclaimed = PERCENT(ctx->kswapd_reclaimed, factor);
-		ctx->direct_reclaimed = PERCENT(ctx->direct_reclaimed, factor);
-		ctx->refault_anon = PERCENT(ctx->refault_anon, factor);
-		ctx->refault_file = PERCENT(ctx->refault_file, factor);
-	} while (percentage_refault >= INCREASE_THRESHOLD);
-
-update:
-	ctx->last_kswapd_reclaimed = total_kswapd_reclaimed;
-	ctx->last_direct_reclaimed = total_direct_reclaimed;
-	ctx->last_nr_damon_passed = total_nr_damon_passed;
-	ctx->last_refault_anon = total_refault_anon;
-	ctx->last_refault_file = total_refault_file;
-	*inc = nr_inc;
-	*dec = nr_dec;
-	ctx->init = true;
-	ret = 0;
-done:
-	return ret;
+	return -1;
 }
 
 int min_age_calc(unsigned long *inc, unsigned long *dec, struct ma_calc *ctx,
@@ -498,7 +467,7 @@ int min_age_calc(unsigned long *inc, unsigned long *dec, struct ma_calc *ctx,
 	if (damon_module == DAMON_RECLAIM)
 		return reclaim_min_age_calc(inc, dec, ctx);
 	else if (damon_module == DAMON_LRU_SORT)
-		return lru_min_age_calc(inc, dec, ctx);
+		return -1;
 	else
 		return -1;
 }
@@ -508,11 +477,16 @@ int min_age_calc(unsigned long *inc, unsigned long *dec, struct ma_calc *ctx,
  */
 int udamond_fn(struct damon_info *info)
 {
-	unsigned int sleep_us;
 	bool is_in_kdamond_watermark;
-	unsigned long nr_dec = 0, nr_inc = 0, no_dec = 0;
-	unsigned long memtotal, memfree;
-	char *module_name;
+	char *module_name = NULL;
+	unsigned long nr_inc = 0;
+	unsigned long nr_dec = 0;
+	unsigned long no_dec = 0;
+	unsigned long memtotal;
+	unsigned long memfree;
+
+	unsigned long start_us;
+	unsigned long end_us;
 
 	if (!info)
 		goto done;
@@ -524,7 +498,8 @@ int udamond_fn(struct damon_info *info)
 	pr_time("udamond start %s\n", module_name);
 
 	while (true) {
-		sleep_us = UDAMOND_SLEEP_US;
+		times++;
+		start_us = gettime_us();
 
 		if (read_meminfo(&memtotal, &memfree, NULL, NULL))
 			goto done;
@@ -541,20 +516,22 @@ int udamond_fn(struct damon_info *info)
 				 info->damon_module))
 			goto done;
 
-		no_dec += min(nr_inc, MAX_NO_DECREASE);
+		no_dec = 0;
 
 		if (nr_inc) { /* Increase 'min_age' */
-			if (inc_min_age(info->damon_module, nr_inc * STEP_BASE))
+			if (inc_min_age(info->damon_module, nr_inc))
 				goto done;
 		} else if (!no_dec && nr_dec) { /* Decrease 'min_age' */
-			if (dec_min_age(info->damon_module, nr_dec * STEP_BASE))
+			if (dec_min_age(info->damon_module, nr_dec))
 				goto done;
 		}
 
 	rest:
 		no_dec = no_dec ? no_dec - 1 : 0;
 
-		usleep(sleep_us);
+		end_us = gettime_us();
+		info->ma_calc->remaining_time_us += end_us - start_us;
+		usleep(UDAMOND_SLEEP_US);
 	}
 done:
 	pr_time("udamond stop %s\n", module_name);
