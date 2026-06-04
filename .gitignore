@@ -1,3 +1,5 @@
 *.o
 tags
 dama
+enable.sh
+get_newest_report.sh

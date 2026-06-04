@@ -1,0 +1,12 @@
+pgsteal_kswapd 0
+pgsteal_direct 0
+pgsteal_khugepaged 0
+pgsteal_proactive 0
+pgsteal_anon 0
+pgsteal_file 0
+pgsteal_kswapd 5005707
+pgsteal_direct 744199
+pgsteal_khugepaged 6806
+pgsteal_proactive 0
+pgsteal_anon 5554057
+pgsteal_file 202655

@@ -1,0 +1,81 @@
+Result
+======
+
+2026-06-04 Thu
+
+DAMON_RECLAIM min_age autotune
+
+- Default: 120s (Fixed)
+- DAMA: DAMon Autotune
+
+Note that DAMON is [Bytes / 4096].
+|-------------------------------------------------|
+|           | DEFAULT   | FIXED (60s) | DAMA      |
+|-------------------------------------------------|
+| RECLAIMED | --------- | ----------- | --------- |
+| DAMON     | 0         | 27 648      | 669 274   |
+| KSWAPD    | 4 876 306 | 5 259 842   | 1 817 669 |
+| DIRECT    | 12 670    | 19 697      | 1 479     |
+| PSI       | --------- | ----------- | --------- |
+| CPU       | 0.06      | 0.06        | 0.06      |
+| I/O       | 0.00      | 0.00        | 0.00      |
+| MEM       | 0.22      | 0.23        | 0.08      |
+| REFAULT   | --------- | ----------- | --------- |
+| ANON      | 4 462 273 | 4 858 679   | 2 015 817 |
+| FAULT     | --------- | ----------- | --------- |
+| PGFAULT   | 1 317.48  | 1 428.33    | 575.10    |
+| MAJFAULT  | 1 239.70  | 1 349.85    | 560.25    |
+|-------------------------------------------------|
+
+Test:
+
+    total_mem = 8 * GiB
+
+    regions = [
+        Region('user_A_sysadmin', int(total_mem * 0.4), 'none'),
+        Region('user_B_student', int(total_mem * 0.2), 'none'),
+        Region('user_C_drive', int(total_mem * 0.2), 'none'),
+        Region('user_D_bad', int(total_mem * 0.2), 'none'),
+    ]
+
+    phases = []
+
+    # Scenario 1
+    # ==========
+    #
+    # Loop 30s full access + 30s partial access.
+    #
+    # Total time: 30mins ((30s + 30s) * 30 loops)
+    #
+    # The 'min_age' should not be too small, otherwise it will cause many
+    # unnecessary proactive reclaim.
+    #
+    # Ideal 'min_age': > 30s
+
+    for i in range(30):
+        phases.append(Phase(f'scene1_high_{i}', 30 * SEC_MS, [
+            AccessPattern('user_A_sysadmin', False, 1024, 100, 'rw'),
+        ]))
+        phases.append(Phase(f'scene1_low_{i}', 30 * SEC_MS, [
+            AccessPattern('user_A_sysadmin', False, 1024, 10, 'rw'),
+        ]))
+    
+    # Scenario 2
+    # ==========
+    #
+    # Looping {A, B, C, D} with alternating 95% access.
+    # Each region is re-access every 90s.
+    #
+    # Total time: 30mins ((30s * 4 times) *  15 loops)
+    #
+    # The 'min_age' should not be too large, otherwise it will cause many
+    # system memory reclaim (kswapd/direct).
+    #
+    # Ideal 'min_age': < 90s
+    
+    region_names = ['user_A_sysadmin', 'user_B_student', 'user_C_drive', 'user_D_bad']
+    for i in range(15):
+        for r_name in region_names:
+            phases.append(Phase(f'scene2_{r_name}_{i}', 30 * SEC_MS, [
+                AccessPattern(r_name, True, 0, 95, 'rw'),
+            ]))
