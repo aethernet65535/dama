@@ -7,9 +7,14 @@
 #define MiB (1024 * KiB)
 #define GiB (1024 * MiB)
 
-#define REFAULT_HIGH (1 << 0)
-#define DAMON_HIGH (1 << 1)
-#define PGSTEAL_HIGH (1 << 2)
+#define REFAULT_HIGH BIT(0)
+#define DAMON_HIGH BIT(1)
+#define PGSTEAL_HIGH BIT(2)
+
+/* Configable - but better don't touch */
+#define FADE_FACTOR (95)
+#define NOT_WORKING_FACTOR (45)
+#define WORKING_FACTOR (90)
 
 /* Configable */
 #define CONFIG_LOG_ENABLED (1)
@@ -27,10 +32,5 @@
 #define INCREASE_THRESHOLD (5)
 #define DECREASE_THRESHOLD (10)
 
-#define FADE_FACTOR (95)
-#define NOT_WORKING_FACTOR (45)
-#define WORKING_FACTOR (90)
-
 #define DAMON_THRESHOLD (16 * KiB)
 #define PGSTEAL_THRESHOLD (16 * MiB)
-#define TIME_THRESHOLD (5 * MIN_US)

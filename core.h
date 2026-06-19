@@ -7,33 +7,60 @@
 #define min3(x, y, z) (min((x), min((y), (z))))
 #define max3(x, y, z) (max((x), max((y), (z))))
 
+#define BIT(x) (1 << x)
+
 #define PAGE_SIZE (4096)
 
 #define DAMON_RECLAIM (0)
 #define DAMON_LRU_SORT (1)
 
-struct ma_calc {
-	unsigned long kswapd_reclaimed;
-	unsigned long direct_reclaimed;
-	unsigned long nr_damon_applied;
+#define MAS_ERR BIT(0)
+#define MAS_NEED_INIT BIT(1)
 
-	unsigned long remaining_pgsteal;
-	unsigned long remaining_damon;
+struct mas_calc {
+	struct {
+		unsigned long nr_inc;
+		unsigned long nr_dec;
+		unsigned long next_min_age;
+	} result;
 
-	unsigned long refault_anon;
-	unsigned long refault_file;
-	unsigned long anon_weight;
-	unsigned long file_weight;
+	/* State */
+	struct {
+		unsigned long damon;
+		unsigned long pgsteal;
+	} remaining;
 
-	unsigned long last_kswapd_reclaimed;
-	unsigned long last_direct_reclaimed;
-	unsigned long last_nr_damon_applied;
-	unsigned long last_refault_anon;
-	unsigned long last_refault_file;
+	struct {
+		unsigned long anon_weight;
+		unsigned long file_weight;
+		bool init;
+	} state;
 
-	unsigned long remaining_time_us;
+	/* History/Last */
+	struct {
+		unsigned long kswapd_reclaimed;
+		unsigned long direct_reclaimed;
+		unsigned long nr_damon_applied;
+		unsigned long refault_anon;
+		unsigned long refault_file;
+	} last;
 
-	bool init;
+	struct {
+		unsigned long kswapd_reclaimed;
+		unsigned long direct_reclaimed;
+		unsigned long nr_damon_applied;
+		unsigned long refault_anon;
+		unsigned long refault_file;
+	} metric;
+
+	struct {
+		unsigned long kswapd_reclaimed;
+		unsigned long direct_reclaimed;
+		unsigned long nr_damon_applied;
+		unsigned long refault_anon;
+		unsigned long refault_file;
+	} total;
+
 };
 
 struct sysfs_param {
@@ -53,7 +80,7 @@ struct psi {
 struct damon_info {
 	unsigned int damon_module;
 	struct sysfs_param *stats;
-	struct ma_calc *ma_calc;
+	struct mas_calc *mas_calc;
 	struct wmarks wmarks;
 };
 
