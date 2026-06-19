@@ -6,11 +6,12 @@ Result
 DAMON_RECLAIM min_age autotune
 
 - Default: 120s (Fixed)
-- DAMA: DAMon Autotune
+- Custom: 10s (Fixed)
+- Dama: 10s (Initial)
 
 Note that DAMON is [Bytes / 4096].
 |-------------------------------------------------|
-|           | DEFAULT   | FIXED (10s) | DAMA      |
+|           | DEFAULT   | CUSTOM      | DAMA      |
 |-------------------------------------------------|
 | RECLAIMED | --------- | ----------- | --------- |
 | DAMON     | 888 180   | 5 480 770   | 1 103 922 |
