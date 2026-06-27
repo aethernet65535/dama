@@ -4,14 +4,14 @@
 
 #if CONFIG_LOG_ENABLED
 #define pr_info(fmt, ...) printf("[INFO]" fmt, ##__VA_ARGS__)
-#define pr_time(fmt, ...) \
-do { \
-    time_t now = time(NULL); \
-    struct tm *tm = localtime(&now); \
-    char ts[64]; \
-    strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm); \
-    printf("[%s] " fmt, ts, ##__VA_ARGS__); \
-} while(0)
+#define pr_time(fmt, ...)                                                      \
+	do {                                                                   \
+		time_t now = time(NULL);                                       \
+		struct tm *tm = localtime(&now);                               \
+		char ts[64];                                                   \
+		strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm);             \
+		printf("[%s] " fmt, ts, ##__VA_ARGS__);                        \
+	} while (0)
 #define pr_err(fmt, ...) printf("[ERROR]" fmt, ##__VA_ARGS__)
 #else
 #define pr_info(fmt, ...) ((void)0)

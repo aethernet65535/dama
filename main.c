@@ -1,9 +1,7 @@
-#include <stdbool.h>
-#include <stdlib.h>
 #include "core.h"
+#include "damon.h"
 #include "sysfs.h"
 #include "log.h"
-#include "config.h"
 
 int main(void)
 {
@@ -18,7 +16,7 @@ int main(void)
 		return -1;
 	}
 
-	info->damon_module = DAMON_RECLAIM;
+	info->damon_module = DAMON_MODULE;
 	if (module_to_name(info->damon_module, &module_name))
 		return -1;
 

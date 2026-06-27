@@ -1,146 +1,10 @@
-#include <sys/param.h>
-#include <sys/time.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdio.h>
 #include "core.h"
+#include "damon.h"
 #include "sysfs.h"
 #include "log.h"
+#include "util.h"
 
-unsigned long times = 0;
-
-unsigned long gettime_us(void)
-{
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-	return tv.tv_usec;
-}
-
-bool strtobool(const char *str)
-{
-	if (!str)
-		return false;
-
-	return (str[0] == 'Y' || str[0] == 'y' || str[0] == '1');
-}
-
-int damon_read_ulong(const char *module_name, const char *param,
-		     unsigned long *val)
-{
-	char path[512];
-	int ret, len;
-
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
-
-	ret = read_sysfs_ulong(path, val);
-	if (ret)
-		return ret;
-
-	return 0;
-}
-
-int damon_read_bool(const char *module_name, const char *param, bool *val)
-{
-	char path[512];
-	int ret, len;
-	char c;
-
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
-
-	ret = read_sysfs_char(path, &c);
-	if (ret)
-		return ret;
-
-	*val = strtobool(&c);
-
-	return 0;
-}
-
-int damon_write_ulong(const char *module_name, const char *param,
-		      unsigned long val)
-{
-	char path[512];
-	int len;
-
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
-
-	return write_sysfs_ulong(path, val);
-}
-
-int damon_write_bool(const char *module_name, const char *param, bool val)
-{
-	char path[512];
-	int len;
-
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
-
-	return write_sysfs_bool(path, val);
-}
-
-int damon_is_enabled(const char *module_name, bool *enabled)
-{
-	int ret;
-	bool val;
-
-	ret = damon_read_bool(module_name, "enabled", &val);
-	if (ret)
-		return ret;
-
-	*enabled = val ? true : false;
-	return 0;
-}
-
-int damon_set_enabled(const char *module_name, bool on)
-{
-	return damon_write_bool(module_name, "enabled", on);
-}
-
-int damon_commit_params(const char *module_name)
-{
-	return damon_write_bool(module_name, "commit_inputs", true);
-}
-
-int read_damon_nr_applied(unsigned int damon_module,
-			  unsigned long *damon_nr_applied)
-{
-	char *module_name;
-
-	if (module_to_name(damon_module, &module_name))
-		return -1;
-
-	if (damon_module == DAMON_RECLAIM) {
-		if (damon_read_ulong(module_name, "bytes_reclaimed_regions",
-				     damon_nr_applied))
-			return -1;
-	} else if (damon_module == DAMON_LRU_SORT) {
-		if (damon_read_ulong(module_name,
-				     "bytes_lru_sorted_cold_regions",
-				     damon_nr_applied))
-			return -1;
-	}
-
-	return 0;
-}
+unsigned long ticks = 0;
 
 bool is_supported_module(unsigned int damon_module)
 {
@@ -167,32 +31,6 @@ int module_to_name(unsigned int damon_module, char **module_name)
 	return 0;
 }
 
-int damon_read_wmarks(char *module_name, struct wmarks *wmarks)
-{
-	if (!module_name)
-		return 0;
-
-	if (damon_read_ulong(module_name, "wmarks_high", &wmarks->high))
-		return -1;
-	if (damon_read_ulong(module_name, "wmarks_mid", &wmarks->mid))
-		return -1;
-	if (damon_read_ulong(module_name, "wmarks_low", &wmarks->low))
-		return -1;
-
-	if (wmarks->high)
-		wmarks->high /= 10;
-	if (wmarks->mid)
-		wmarks->mid /= 10;
-	if (wmarks->low)
-		wmarks->low /= 10;
-
-	return 0;
-}
-
-void *zalloc(size_t size) {
-	return calloc(1, size);
-}
-
 void *alloc_damon_info(void)
 {
 	struct damon_info *damon_info = malloc(sizeof(struct damon_info));
@@ -201,8 +39,8 @@ void *alloc_damon_info(void)
 	if (!damon_info)
 		return ret;
 
-	damon_info->stats = zalloc(sizeof(struct sysfs_param));
-	if (!damon_info->stats)
+	damon_info->param = zalloc(sizeof(struct damos_param));
+	if (!damon_info->param)
 		return ret;
 
 	damon_info->mas_calc = zalloc(sizeof(struct mas_calc));
@@ -212,54 +50,8 @@ void *alloc_damon_info(void)
 	return damon_info;
 }
 
-int module_to_min_age(unsigned int damon_module, char **min_age)
-{
-	if (!min_age)
-		return -1;
-
-	if (damon_module == DAMON_RECLAIM)
-		*min_age = "min_age";
-	else if (damon_module == DAMON_LRU_SORT)
-		*min_age = "cold_min_age";
-	else
-		return -1;
-
-	return 0;
-}
-
-int get_min_age(unsigned int damon_module, unsigned long *min_age)
-{
-	char *min_age_name = NULL;
-	char *module_name = NULL;
-
-	if (module_to_name(damon_module, &module_name))
-		return -1;
-	if (module_to_min_age(damon_module, &min_age_name))
-		return -1;
-	if (damon_read_ulong(module_name, min_age_name, min_age))
-		return -1;
-
-	return 0;
-}
-
-int write_min_age(unsigned int damon_module, unsigned long min_age)
-{
-	char *min_age_name = NULL;
-	char *module_name = NULL;
-
-	if (module_to_name(damon_module, &module_name))
-		return -1;
-	if (module_to_min_age(damon_module, &min_age_name))
-		return -1;
-	if (damon_write_ulong(module_name, min_age_name, min_age))
-		return -1;
-	if (damon_commit_params(module_name))
-		return -1;
-
-	return 0;
-}
-
-int inc_min_age(unsigned int damon_module, unsigned long step, unsigned long *min_age)
+int inc_min_age(unsigned int damon_module, unsigned long step,
+		unsigned long *min_age)
 {
 	if (!step)
 		return -1;
@@ -271,12 +63,13 @@ int inc_min_age(unsigned int damon_module, unsigned long step, unsigned long *mi
 	else
 		*min_age = min(MAX_MIN_AGE, *min_age + step);
 
-	pr_time("[%lu] inc_min_age(): %lu\n", times, *min_age);
+	pr_time("[%lu] inc_min_age(): %lu\n", ticks, *min_age);
 
 	return 0;
 }
 
-int dec_min_age(unsigned int damon_module, unsigned long step, unsigned long *min_age)
+int dec_min_age(unsigned int damon_module, unsigned long step,
+		unsigned long *min_age)
 {
 	if (!step)
 		return -1;
@@ -289,14 +82,9 @@ int dec_min_age(unsigned int damon_module, unsigned long step, unsigned long *mi
 	else
 		*min_age = max(MIN_MIN_AGE, *min_age - step);
 
-	pr_time("[%lu] dec_min_age(): %lu\n", times, *min_age);
+	pr_time("[%lu] dec_min_age(): %lu\n", ticks, *min_age);
 
 	return 0;
-}
-
-void pct(unsigned long *val, unsigned long percentage)
-{
-	*val = PERCENT(*val, percentage);
 }
 
 unsigned long update_mas(struct mas_calc *ctx)
@@ -325,8 +113,10 @@ unsigned long update_mas(struct mas_calc *ctx)
 	if (!ctx->state.init)
 		goto update;
 
-	d_kswapd_reclaimed = total_kswapd_reclaimed - ctx->last.kswapd_reclaimed;
-	d_direct_reclaimed = total_direct_reclaimed - ctx->last.direct_reclaimed;
+	d_kswapd_reclaimed =
+		total_kswapd_reclaimed - ctx->last.kswapd_reclaimed;
+	d_direct_reclaimed =
+		total_direct_reclaimed - ctx->last.direct_reclaimed;
 	d_pgsteal = d_kswapd_reclaimed + d_direct_reclaimed;
 	d_damon_reclaimed = total_nr_damon_applied - ctx->last.nr_damon_applied;
 update:
@@ -392,7 +182,7 @@ int reclaim_step_calc(struct mas_calc *ctx, int damon_module)
 
 		percentage = (refault_weighted * 100) / damon_reclaimed;
 		if (percentage > INCREASE_THRESHOLD) {
-			pr_time("[%lu] percentage-damon: %lu\n", times,
+			pr_time("[%lu] percentage-damon: %lu\n", ticks,
 				percentage);
 			diff = (percentage - INCREASE_THRESHOLD);
 			nr_inc = PERCENT(min_age, diff);
@@ -411,7 +201,7 @@ int reclaim_step_calc(struct mas_calc *ctx, int damon_module)
 
 		percentage = (refault_weighted * 100) / pgsteal;
 		if (percentage < DECREASE_THRESHOLD) {
-			pr_time("[%lu] percentage-system: %lu\n", times,
+			pr_time("[%lu] percentage-system: %lu\n", ticks,
 				percentage);
 			diff = (DECREASE_THRESHOLD - percentage);
 			nr_dec = PERCENT(min_age, diff);
@@ -433,7 +223,7 @@ int fade_mas(struct mas_calc *ctx)
 	 * decaying at the same rate.
 	 */
 	while (true) {
-		unsigned refault_weighted, damon_reclaimed, pgsteal;
+		unsigned long refault_weighted, damon_reclaimed, pgsteal;
 		unsigned long refault_anon = ctx->metric.refault_anon;
 		unsigned long refault_file = ctx->metric.refault_file;
 		unsigned long nr_damon_applied = ctx->metric.nr_damon_applied;
@@ -525,7 +315,7 @@ int reclaim_min_age_calc(struct mas_calc *ctx)
 	if (nr_dec) {
 		ret = dec_min_age(DAMON_RECLAIM, nr_dec, &next_min_age);
 	} else if (nr_inc) {
-		ret =inc_min_age(DAMON_RECLAIM, nr_inc, &next_min_age);
+		ret = inc_min_age(DAMON_RECLAIM, nr_inc, &next_min_age);
 	}
 	if (ret) {
 		goto err;
@@ -540,8 +330,7 @@ err:
 	return -1;
 }
 
-int min_age_calc(struct mas_calc *ctx,
-		 unsigned int damon_module)
+int min_age_calc(struct mas_calc *ctx, unsigned int damon_module)
 {
 	if (damon_module == DAMON_RECLAIM)
 		return reclaim_min_age_calc(ctx);
@@ -560,9 +349,9 @@ int udamond_fn(struct damon_info *info)
 	unsigned long next_min_age;
 	unsigned long memtotal;
 	unsigned long memfree;
-
 	unsigned int damon_module = info->damon_module;
-
+	unsigned long quota_ms = 0;
+	unsigned long quota_sz = 0;
 	bool in_wmarks = false;
 	bool executed_kdamond = false;
 	bool stop_kdamond = false;
@@ -573,26 +362,31 @@ int udamond_fn(struct damon_info *info)
 		goto done;
 	if (!is_supported_module(damon_module))
 		goto done;
+	if (damos_init())
+		goto done;
+	if (damon_read_quota(module_name, &quota_ms, &quota_sz))
+		goto done;
 
 	pr_time("udamond start %s\n", module_name);
 
 	while (true) {
-		times++;
+		ticks++;
 
 		if (read_meminfo(&memtotal, &memfree, NULL, NULL))
 			goto done;
 		if (damon_read_wmarks(module_name, &info->wmarks))
 			goto done;
 		executed_kdamond =
-			(PERCENT(memtotal, info->wmarks.low) <= memfree &&
-			 memfree <= PERCENT(memtotal, info->wmarks.mid));
+			(PERCENT(memtotal, info->wmarks.low / 10) <= memfree &&
+			 memfree <= PERCENT(memtotal, info->wmarks.mid / 10));
 
 		if (!executed_kdamond && !in_wmarks)
 			goto rest;
 
 		in_wmarks = true;
-		stop_kdamond = PERCENT(memtotal, info->wmarks.high) < memfree \
-			    || PERCENT(memtotal, info->wmarks.low > memfree);
+		stop_kdamond =
+			PERCENT(memtotal, info->wmarks.high / 10) < memfree ||
+			PERCENT(memtotal, info->wmarks.low / 10) > memfree;
 
 		if (stop_kdamond) {
 			executed_kdamond = false;
@@ -609,6 +403,15 @@ int udamond_fn(struct damon_info *info)
 			write_min_age(damon_module, next_min_age);
 
 rest:
+		if (SCHEME_WATERMARKS) {
+			if (!in_wmarks) {
+				damon_write_quota(module_name, 0, 0);
+			} else {
+				if (damon_read_quota(module_name, &quota_ms, &quota_sz))
+					goto done;
+				damon_write_quota(module_name, quota_ms, quota_sz);
+			}
+		}
 		usleep(UDAMOND_SLEEP_US);
 	}
 done:

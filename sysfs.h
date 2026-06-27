@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdbool.h>
 
 int write_sysfs_ulong(const char *path, unsigned long val);

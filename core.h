@@ -1,4 +1,9 @@
 #include <stdbool.h>
+#include <sys/param.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "config.h"
 
 #define pow2(x) (x * x)
 #define PERCENT(x, p) (((x) * (p)) / 100)
@@ -11,11 +16,18 @@
 
 #define PAGE_SIZE (4096)
 
-#define DAMON_RECLAIM (0)
-#define DAMON_LRU_SORT (1)
-
 #define MAS_ERR BIT(0)
 #define MAS_NEED_INIT BIT(1)
+
+struct wmarks {
+	unsigned long high, mid, low;
+};
+
+struct damos_param {
+	unsigned int damon_module;
+	unsigned long min_age;
+	struct wmarks wmarks;
+};
 
 struct mas_calc {
 	struct {
@@ -60,32 +72,21 @@ struct mas_calc {
 		unsigned long refault_anon;
 		unsigned long refault_file;
 	} total;
-
-};
-
-struct sysfs_param {
-	unsigned long min_age;
-};
-
-struct wmarks {
-	unsigned long high, mid, low;
 };
 
 struct psi {
-       unsigned long some_avg10, some_avg60, some_avg300;
-       unsigned long full_avg10, full_avg60, full_avg300;
-       unsigned long long some_total, full_total;
+	unsigned long some_avg10, some_avg60, some_avg300;
+	unsigned long full_avg10, full_avg60, full_avg300;
+	unsigned long long some_total, full_total;
 };
 
 struct damon_info {
 	unsigned int damon_module;
-	struct sysfs_param *stats;
+	struct damos_param *param;
 	struct mas_calc *mas_calc;
 	struct wmarks wmarks;
 };
 
 int module_to_name(unsigned int damon_module, char **module_name);
-int damon_is_enabled(const char *module_name, bool *enabled);
-int damon_set_enabled(const char *module_name, bool on);
 void *alloc_damon_info(void);
 int udamond_fn(struct damon_info *info);
