@@ -1,5 +1,5 @@
 # dama [alpha]
-dama has two names, the more formal one is DAMon Autotune; The less
+dama has two names, the more formal one is DAMos Autotune; The less
 formal one is "大吗？" (dà ma, meaning "is it big?").
 
 # What dama do?
@@ -34,4 +34,13 @@ Note that the unit of RECLAIMED is _pages_.
 | PGFAULT   | 1 317.48  | 1 428.33    | 575.10    | 1 443.96  |
 | MAJFAULT  | 1 239.70  | 1 349.85    | 560.25    | 1 365.70  |
 |-------------------------------------------------------------|
+```
+```
+
+# Build
+```sh
+$ make clean
+$ make
+```
+```
 ```

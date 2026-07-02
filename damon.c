@@ -239,14 +239,20 @@ int damos_init(void)
 {
 	unsigned int damon_module = DAMON_MODULE;
 	unsigned long min_age = MIN_AGE;
-	struct wmarks wmarks = {
-		.high = WMARKS_HIGH,
-		.mid = WMARKS_MID,
-		.low = WMARKS_LOW
-	};
+	struct wmarks wmarks;
 	unsigned long quota_ms = QUOTA_MS;
 	unsigned long quota_sz = QUOTA_SZ;
 	char *module_name = NULL;
+
+	if (SCHEME_WATERMARKS) {
+		wmarks.high = 1000;
+		wmarks.mid = 1000;
+		wmarks.low = 0;
+	} else {
+		wmarks.high = WMARKS_HIGH;
+		wmarks.mid = WMARKS_MID;
+		wmarks.low = WMARKS_LOW;
+	}
 
 	if (module_to_name(damon_module, &module_name))
 		return -1;

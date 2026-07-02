@@ -35,7 +35,7 @@
 #define DAMON_MODULE (DAMON_RECLAIM)
 
 #define WMARKS_HIGH (1000)
-#define WMARKS_MID (1000)
+#define WMARKS_MID (300)
 #define WMARKS_LOW (0)
 
 #define MIN_AGE (10 * SEC_US)

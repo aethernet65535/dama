@@ -374,19 +374,17 @@ int udamond_fn(struct damon_info *info)
 
 		if (read_meminfo(&memtotal, &memfree, NULL, NULL))
 			goto done;
-		if (damon_read_wmarks(module_name, &info->wmarks))
-			goto done;
 		executed_kdamond =
-			(PERCENT(memtotal, info->wmarks.low / 10) <= memfree &&
-			 memfree <= PERCENT(memtotal, info->wmarks.mid / 10));
+			(PERCENT(memtotal, WMARKS_LOW / 10) <= memfree &&
+			 memfree <= PERCENT(memtotal, WMARKS_MID / 10));
 
 		if (!executed_kdamond && !in_wmarks)
 			goto rest;
 
 		in_wmarks = true;
 		stop_kdamond =
-			PERCENT(memtotal, info->wmarks.high / 10) < memfree ||
-			PERCENT(memtotal, info->wmarks.low / 10) > memfree;
+			PERCENT(memtotal, WMARKS_HIGH / 10) < memfree ||
+			PERCENT(memtotal, WMARKS_LOW / 10) > memfree;
 
 		if (stop_kdamond) {
 			executed_kdamond = false;

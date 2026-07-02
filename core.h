@@ -84,7 +84,6 @@ struct damon_info {
 	unsigned int damon_module;
 	struct damos_param *param;
 	struct mas_calc *mas_calc;
-	struct wmarks wmarks;
 };
 
 int module_to_name(unsigned int damon_module, char **module_name);
