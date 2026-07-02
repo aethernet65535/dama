@@ -49,12 +49,12 @@ echo Y > /sys/module/damon_reclaim/parameters/enabled
 
 pushd /home/user/workspace/dcperf/
 sudo ./benchpress_cli.py run tao_bench_standalone -i \
-'{ \
+'{\
 "num_servers": 1, \
 "memsize": 16, \
 "num_clients": 2, \
 "warmup_time": 160, \
-"test_time": 300 \
+"test_time": 300\
 }'
 popd
 
