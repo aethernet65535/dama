@@ -1,7 +1,0 @@
-Linux 7.0.9-arch2-1 (archlinux) 	05/23/2026 	_x86_64_	(4 CPU)
-
-05:48:16 PM  pgpgin/s pgpgout/s   fault/s  majflt/s  pgfree/s pgscank/s pgscand/s pgsteal/s  pgprom/s   pgdem/s
-05:48:21 PM   2343.20      0.00   1213.40      2.20     69.00      0.00      0.00      0.00      0.00      0.00
-05:48:26 PM      0.00      0.80      6.80      0.00      6.60      0.00      0.00      0.00      0.00      0.00
-
-Average:      1171.60      0.40    610.10      1.10     37.80      0.00      0.00      0.00      0.00      0.00
