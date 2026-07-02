@@ -48,7 +48,7 @@ echo $(($DEFAULT_MIN_AGE_SEC * 1000000)) > /sys/module/damon_reclaim/parameters/
 echo Y > /sys/module/damon_reclaim/parameters/enabled
 
 pushd /home/user/workspace/dcperf/
-sudo ./benchpress_cli.py run tao_bench_standalone -i '{"num_servers": 1, "memsize": 16, "num_clients": 2, "warmup_time": 160, "test_time": 300\}'
+sudo ./benchpress_cli.py run tao_bench_standalone -i '{"num_servers": 1, "memsize": 16, "num_clients": 2, "warmup_time": 160, "test_time": 300}'
 popd
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
