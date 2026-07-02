@@ -10,7 +10,7 @@ DATE="2026-07-02-0001"
 TEST_SECS=$((720))
 TOTAL_MEM=$((15991316))
 INTERVAL_SECS=$((5))
-SAMPLING_TIMES=$((($TEST_MINS*MIN_SEC)/INTERVAL_SECS))
+SAMPLING_TIMES=$((($TEST_MINS*$MIN_SEC)/$INTERVAL_SECS))
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "please run as root"
