@@ -47,7 +47,7 @@ echo $(($DEFAULT_MIN_AGE_SEC * 1000000)) > /sys/module/damon_reclaim/parameters/
 
 echo Y > /sys/module/damon_reclaim/parameters/enabled
 
-/home/user/workspace/dcperf/benchpress_cli.py run tao_bench_standalone
+sudo /home/user/workspace/dcperf/benchpress_cli.py run tao_bench_standalone
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
 cat /proc/vmstat | rg "pgsteal" >> ./report/$DIR_NAME\-$DATE/pgsteal.txt
