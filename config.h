@@ -28,7 +28,7 @@
 
 #define CONFIG_LOG_ENABLED (1)
 #define CONFIG_DEBUG_ENABLED (1)
-#define SCHEME_WATERMARKS (0)
+#define SCHEME_WATERMARKS (1)
 
 /* -- Sysfs Param -- */
 
@@ -36,7 +36,7 @@
 
 #define WMARKS_HIGH (800)
 #define WMARKS_MID (700)
-#define WMARKS_LOW (20)
+#define WMARKS_LOW (0)
 
 #define MIN_AGE (10 * SEC_US)
 
