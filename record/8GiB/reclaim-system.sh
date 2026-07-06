@@ -41,7 +41,7 @@ pushd /home/user/workspace/ycsb
     -p mongodb.url=mongodb://127.0.0.1:27017/ycsb \
     -p mongodb.maxconnections=128 \
     -p maxexecutiontime=$TEST_SECS \
-    > ycsb_run.log 2>&1
+    > /home/user/workspace/dama/record/8GiB/report/$DIR_NAME\-$DATE/ycsb.txt 2>&1
 popd
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
