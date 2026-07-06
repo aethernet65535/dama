@@ -6,7 +6,7 @@
 MIN_SEC=60
 
 DIR_NAME="rec-dama"
-DATE="2026-07-02-0001"
+DATE="2026-07-06-0001"
 TEST_SECS=$((300))
 TOTAL_MEM=$((15991316))
 INTERVAL_SECS=$((5))
@@ -47,8 +47,13 @@ echo $(($DEFAULT_MIN_AGE_SEC * 1000000)) > /sys/module/damon_reclaim/parameters/
 
 echo Y > /sys/module/damon_reclaim/parameters/enabled
 
-pushd /home/user/workspace/dcperf/
-sudo ./benchpress_cli.py run tao_bench_standalone -i '{"num_servers": 1, "memsize": 8, "num_clients": 2, "warmup_time": 60, "test_time": 240}'
+pushd /home/user/workspace/ycsb
+./bin/ycsb run mongodb -s \
+    -P workloads/custom/qwen \
+    -p mongodb.url=mongodb://127.0.0.1:27017/ycsb \
+    -p mongodb.maxconnections=128 \
+    -p maxexecutiontime=600 \
+    > ycsb_run.log 2>&1
 popd
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
