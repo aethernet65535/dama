@@ -118,7 +118,7 @@ unsigned long update_mas(struct mas_calc *ctx)
 	d_direct_reclaimed =
 		total_direct_reclaimed - ctx->last.direct_reclaimed;
 	d_pgsteal = d_kswapd_reclaimed + d_direct_reclaimed;
-	d_damon_reclaimed = total_nr_damon_applied - ctx->last.nr_damon_applied;
+	d_damon_reclaimed = (total_nr_damon_applied / PAGE_SIZE) - ctx->last.nr_damon_applied;
 update:
 	ctx->total.nr_damon_applied = total_nr_damon_applied / PAGE_SIZE;
 	ctx->total.kswapd_reclaimed = total_kswapd_reclaimed;
