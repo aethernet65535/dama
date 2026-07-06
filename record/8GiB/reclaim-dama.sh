@@ -52,7 +52,7 @@ pushd /home/user/workspace/ycsb
     -P workloads/custom/qwen \
     -p mongodb.url=mongodb://127.0.0.1:27017/ycsb \
     -p mongodb.maxconnections=128 \
-    -p maxexecutiontime=600 \
+    -p maxexecutiontime=$TEST_SECS \
     > ycsb_run.log 2>&1
 popd
 
