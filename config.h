@@ -28,15 +28,15 @@
 
 #define CONFIG_LOG_ENABLED (1)
 #define CONFIG_DEBUG_ENABLED (1)
-#define SCHEME_WATERMARKS (1)
+#define SCHEME_WATERMARKS (0)
 
 /* -- Sysfs Param -- */
 
 #define DAMON_MODULE (DAMON_RECLAIM)
 
-#define WMARKS_HIGH (1000)
-#define WMARKS_MID (300)
-#define WMARKS_LOW (0)
+#define WMARKS_HIGH (800)
+#define WMARKS_MID (700)
+#define WMARKS_LOW (20)
 
 #define MIN_AGE (10 * SEC_US)
 

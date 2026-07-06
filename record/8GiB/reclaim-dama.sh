@@ -21,9 +21,6 @@ pkill -x dama
 pkill stress-ng
 pkill sar
 
-# DAMON will run when the free is in 40-2%, will stop if it is higher
-# than 50%. Just like kswapd will run when free is lower than 'low', and
-# stop when free is higher than 'high'.
 echo N > /sys/module/damon_reclaim/parameters/enabled
 echo 800 > /sys/module/damon_reclaim/parameters/wmarks_high
 echo 700 > /sys/module/damon_reclaim/parameters/wmarks_mid
