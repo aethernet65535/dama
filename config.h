@@ -45,7 +45,7 @@
 
 /* -- End -- */
 
-#define UDAMOND_SLEEP_US (5UL * SEC_US)
+#define UDAMOND_SLEEP_US (5UL * MS_US)
 
 #define MIN_MIN_AGE (10UL * SEC_US)
 #define MAX_MIN_AGE (10UL * MIN_US)
