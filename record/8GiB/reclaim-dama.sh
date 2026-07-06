@@ -39,7 +39,6 @@ sar -q IO $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/io.txt &
 sar -q MEM $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/memo.txt &
 sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
-echo $(($DEFAULT_MIN_AGE_SEC * 1000000)) > /sys/module/damon_reclaim/parameters/min_age
 /home/user/workspace/dama/dama >> ./report/$DIR_NAME\-$DATE/dama.txt &
 
 echo Y > /sys/module/damon_reclaim/parameters/enabled
