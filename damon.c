@@ -262,6 +262,8 @@ int damos_init(void)
 		return -1;
 	if (damon_write_quota(module_name, quota_ms, quota_sz))
 		return -1;
+	if (damon_commit_params(module_name))
+		return -1;
 
 	return 0;
 }
