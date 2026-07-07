@@ -403,7 +403,7 @@ int udamond_fn(struct damon_info *info)
 rest:
 		if (SCHEME_WATERMARKS) {
 			if (!in_wmarks) {
-				damon_write_quota(module_name, 0, 0);
+				damon_write_quota(module_name, 1, 1);
 			} else {
 				if (damon_read_quota(module_name, &quota_ms, &quota_sz))
 					goto done;
