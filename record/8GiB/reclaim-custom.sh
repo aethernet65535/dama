@@ -21,10 +21,15 @@ pkill stress-ng
 pkill sar
 
 echo N > /sys/module/damon_reclaim/parameters/enabled
-echo 800 > /sys/module/damon_reclaim/parameters/wmarks_high
-echo 700 > /sys/module/damon_reclaim/parameters/wmarks_mid
-echo 20 > /sys/module/damon_reclaim/parameters/wmarks_low
+echo 500 > /sys/module/damon_reclaim/parameters/wmarks_high
+echo 400 > /sys/module/damon_reclaim/parameters/wmarks_mid
+echo 0 > /sys/module/damon_reclaim/parameters/wmarks_low
 echo $((10*1000000)) > /sys/module/damon_reclaim/parameters/min_age
+
+echo 1 > /sys/module/damon_reclaim/parameters/quota_ms
+echo 1 > /sys/module/damon_reclaim/parameters/quota_sz
+
+echo Y > /sys/module/damon_reclaim/parameters/enabled
 
 rm -rf ./report/$DIR_NAME\-$DATE/
 mkdir -p ./report/$DIR_NAME\-$DATE/
@@ -48,7 +53,9 @@ sar -q IO $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/io.txt &
 sar -q MEM $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/memo.txt &
 sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
-echo Y > /sys/module/damon_reclaim/parameters/enabled
+echo 10 > /sys/module/damon_reclaim/parameters/quota_ms
+echo 134217728 > /sys/module/damon_reclaim/parameters/quota_sz
+echo Y > /sys/module/damon_reclaim/parameters/commit_inputs
 sleep 60m
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt

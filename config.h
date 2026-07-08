@@ -36,7 +36,7 @@
 
 #define WMARKS_HIGH (500)
 #define WMARKS_MID (400)
-#define WMARKS_LOW (200)
+#define WMARKS_LOW (0)
 
 #define MIN_AGE (10 * SEC_US)
 

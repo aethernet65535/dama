@@ -44,7 +44,6 @@ sar -q IO $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/io.txt &
 sar -q MEM $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/memo.txt &
 sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
-echo Y > /sys/module/damon_reclaim/parameters/enabled
 sleep 60m
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
