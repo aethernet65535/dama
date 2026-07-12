@@ -25,23 +25,8 @@ echo 500 > /sys/module/damon_reclaim/parameters/wmarks_high
 echo 400 > /sys/module/damon_reclaim/parameters/wmarks_mid
 echo 0 > /sys/module/damon_reclaim/parameters/wmarks_low
 
-echo 1 > /sys/module/damon_reclaim/parameters/quota_ms
-echo 1 > /sys/module/damon_reclaim/parameters/quota_sz
-
-echo Y > /sys/module/damon_reclaim/parameters/enabled
-
 rm -rf ./report/$DIR_NAME\-$DATE/
 mkdir -p ./report/$DIR_NAME\-$DATE/
-
-pushd /home/user/workspace/ycsb
-./bin/ycsb run mongodb -s \
-    -P workloads/custom/qwen \
-    -p mongodb.url=mongodb://127.0.0.1:27017/ycsb \
-    -p mongodb.maxconnections=128 \
-    -p maxexecutiontime=$TEST_SECS \
-    > /home/user/workspace/dama/record/8GiB/report/$DIR_NAME\-$DATE/ycsb.txt 2>&1 &
-popd
-sleep 10m
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
 cat /proc/vmstat | rg "pgsteal" >> ./report/$DIR_NAME\-$DATE/pgsteal.txt
@@ -52,11 +37,15 @@ sar -q IO $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/io.txt &
 sar -q MEM $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/memo.txt &
 sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
-echo 10 > /sys/module/damon_reclaim/parameters/quota_ms
-echo 134217728 > /sys/module/damon_reclaim/parameters/quota_sz
-echo Y > /sys/module/damon_reclaim/parameters/commit_inputs
-/home/user/workspace/dama/dama
-sleep 60m
+echo Y > /sys/module/damon_reclaim/parameters/enabled
+
+pushd /home/user/workspace/dama
+./dama &
+popd
+
+pushd /home/user/workspace/masim
+./masim configs/zipfian.cfg
+popd
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
 cat /proc/vmstat | rg "pgsteal" >> ./report/$DIR_NAME\-$DATE/pgsteal.txt
