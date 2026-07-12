@@ -157,6 +157,7 @@ int reclaim_step_calc(struct mas_calc *ctx, int damon_module)
 	unsigned long nr_inc = 0;
 	unsigned long nr_dec = 0;
 	unsigned long refault_weighted, min_age;
+	bool fade = false;
 
 	refault_weighted = anon_weighted + file_weighted;
 
@@ -186,6 +187,7 @@ int reclaim_step_calc(struct mas_calc *ctx, int damon_module)
 				percentage);
 			diff = (percentage - INCREASE_THRESHOLD);
 			nr_inc = PERCENT(min_age, diff);
+			goto done;
 		}
 	}
 
@@ -206,10 +208,12 @@ int reclaim_step_calc(struct mas_calc *ctx, int damon_module)
 			diff = (DECREASE_THRESHOLD - percentage);
 			nr_dec = PERCENT(min_age, diff);
 		}
+		fade = true;
 	}
-
+done:
 	ctx->result.nr_inc = nr_inc;
 	ctx->result.nr_dec = nr_dec;
+	ctx->result.fade = fade;
 
 	return 0;
 err:
@@ -286,6 +290,7 @@ int reclaim_min_age_calc(struct mas_calc *ctx)
 {
 	unsigned long ret, damon_reclaimed, pgsteal, min_age;
 	unsigned long next_min_age, nr_inc, nr_dec;
+	bool fade;
 
 	ret = update_mas(ctx);
 	if (ret & MAS_ERR)
@@ -307,9 +312,12 @@ int reclaim_min_age_calc(struct mas_calc *ctx)
 
 	nr_inc = ctx->result.nr_inc;
 	nr_dec = ctx->result.nr_dec;
+	fade = ctx->result.fade;
 
-	if (!nr_inc && !nr_dec)
+	if (!nr_inc && !nr_dec && !fade)
 		goto record;
+	if (!nr_inc && !nr_dec)
+		goto fade;
 
 	next_min_age = ctx->result.next_min_age;
 	if (nr_dec) {
@@ -321,7 +329,7 @@ int reclaim_min_age_calc(struct mas_calc *ctx)
 		goto err;
 	}
 	ctx->result.next_min_age = next_min_age;
-
+fade:
 	fade_mas(ctx);
 record:
 	record_mas(ctx);

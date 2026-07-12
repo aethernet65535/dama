@@ -34,6 +34,7 @@ struct mas_calc {
 		unsigned long nr_inc;
 		unsigned long nr_dec;
 		unsigned long next_min_age;
+		bool fade;
 	} result;
 
 	/* State */
