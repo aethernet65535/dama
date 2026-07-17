@@ -17,7 +17,6 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 pkill -x dama
-pkill stress-ng
 pkill sar
 
 echo N > /sys/module/damon_reclaim/parameters/enabled
@@ -36,6 +35,8 @@ sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
 python ./ollama/llm.py &
 sleep 1h
+
+pkill -x sar
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
 cat /proc/vmstat | rg "pgsteal" >> ./report/$DIR_NAME\-$DATE/pgsteal.txt
