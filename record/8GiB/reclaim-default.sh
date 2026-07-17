@@ -6,7 +6,7 @@
 MIN_SEC=60
 
 DIR_NAME="rec-default"
-DATE="2026-07-13-0001"
+DATE="2026-07-17-0001"
 TEST_SECS=$((60*MIN_SEC))
 INTERVAL_SECS=$((5))
 SAMPLING_TIMES=$(($TEST_SECS/$INTERVAL_SECS))
@@ -40,9 +40,8 @@ sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
 echo Y > /sys/module/damon_reclaim/parameters/enabled
 
-pushd /home/user/workspace/masim
-./masim configs/zipfian.cfg
-popd
+./ollama/llm.py &
+sleep 1h
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
 cat /proc/vmstat | rg "pgsteal" >> ./report/$DIR_NAME\-$DATE/pgsteal.txt
