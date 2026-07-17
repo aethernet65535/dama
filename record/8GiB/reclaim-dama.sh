@@ -43,7 +43,7 @@ pushd /home/user/workspace/dama
 ./dama &
 popd
 
-./ollama/llm.py &
+python ./ollama/llm.py &
 sleep 1h
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt

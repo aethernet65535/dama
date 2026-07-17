@@ -40,7 +40,7 @@ sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
 echo Y > /sys/module/damon_reclaim/parameters/enabled
 
-./ollama/llm.py &
+python ./ollama/llm.py &
 sleep 1h
 
 cat /proc/vmstat | rg "refault" >> ./report/$DIR_NAME\-$DATE/refault.txt
