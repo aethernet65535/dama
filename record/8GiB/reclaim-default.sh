@@ -4,10 +4,11 @@
 # =================================
 
 MIN_SEC=60
+HOUR_SEC=$((60*MIN_SEC))
 
 DIR_NAME="rec-default"
-DATE="2026-07-17-0001"
-TEST_SECS=$((60*MIN_SEC))
+DATE="2026-07-18-0001"
+TEST_SECS=$((24*HOUR_SEC))
 INTERVAL_SECS=$((5))
 SAMPLING_TIMES=$(($TEST_SECS/$INTERVAL_SECS))
 
