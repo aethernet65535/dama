@@ -1,7 +1,7 @@
 import ollama
 import time
 
-READING_SPEED_WORDS_PER_MIN = 300
+READING_SPEED_WORDS_PER_MIN = 225
 
 def get_ollama_response(model, messages):
     """Call Ollama to get a response"""
@@ -10,7 +10,7 @@ def get_ollama_response(model, messages):
 
 def calculate_reading_time(text):
     """Calculate reading time based on word count (in seconds)"""
-    word_count = len(text)
+    word_count = len(text.split())
     minutes = word_count / READING_SPEED_WORDS_PER_MIN
     return max(int(minutes * 60), 2)  # Wait at least 2 seconds
 
@@ -24,7 +24,6 @@ def main():
         "What is the date of the most recent data you have access to?",
         "How does memory management in XNU differ from Linux?",
         "Why didn't Linux adopt XNU's memory management?",
-        "Who benefits the most from UMA (Unified Memory Architecture)?",
         "Have any non-Apple employees ever made real contributions to the XNU kernel?",
         "Among BSD (the three branches), Linux, and XNU, which project has the most volunteer contributions?",
     ]
