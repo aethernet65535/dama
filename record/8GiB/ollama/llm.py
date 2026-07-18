@@ -1,7 +1,7 @@
 import ollama
 import time
 
-READING_SPEED_WORDS_PER_MIN = 225
+READING_SPEED_WORDS_PER_MIN = 133 # B2 Reading Speed
 
 def get_ollama_response(model, messages):
     """Call Ollama to get a response"""
@@ -24,10 +24,8 @@ def main():
         "What is the date of the most recent data you have access to?",
         "How does memory management in XNU differ from Linux?",
         "Why didn't Linux adopt XNU's memory management?",
-        "Have any non-Apple employees ever made real contributions to the XNU kernel?",
         "Among BSD (the three branches), Linux, and XNU, which project has the most volunteer contributions?",
         "Why do supercomputers almost exclusively run on Linux rather than BSD or XNU?",
-        "Most tutorials online are for Linux rather than BSD. Since OpenBSD is theoretically more secure, why are most servers running Linux instead of OpenBSD? Isn’t security the most important factor?",
         "Do banks have servers? If not, do institutions in the financial industry have them? I imagine the financial industry does. If they all do, we could try discussing this together. I’d like to ask: Do those servers run OpenBSD or Linux? Or do they use a kernel or operating system they developed themselves?",
     ]
 
