@@ -40,8 +40,7 @@ sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
 echo Y > /sys/module/damon_reclaim/parameters/enabled
 
-python ./ollama/llm.py &
-sleep 1h
+python ./ollama/llm.py
 
 pkill -x sar
 

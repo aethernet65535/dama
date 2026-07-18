@@ -43,8 +43,7 @@ pushd /home/user/workspace/dama
 ./dama &
 popd
 
-python ./ollama/llm.py &
-sleep 1h
+python ./ollama/llm.py
 
 pkill -x sar
 
