@@ -21,9 +21,14 @@ pkill -x dama
 pkill -x sar
 
 echo N > /sys/module/damon_reclaim/parameters/enabled
-echo 500 > /sys/module/damon_reclaim/parameters/wmarks_high
-echo 400 > /sys/module/damon_reclaim/parameters/wmarks_mid
+echo 1000 > /sys/module/damon_reclaim/parameters/wmarks_high
+echo 1000 > /sys/module/damon_reclaim/parameters/wmarks_mid
 echo 0 > /sys/module/damon_reclaim/parameters/wmarks_low
+echo 1 > /sys/module/damon_reclaim/parameters/quota_ms
+echo 1 > /sys/module/damon_reclaim/parameters/quota_sz
+echo Y > /sys/module/damon_reclaim/parameters/enabled
+
+sleep 10m
 
 rm -rf ./report/$DIR_NAME\-$DATE/
 mkdir -p ./report/$DIR_NAME\-$DATE/
@@ -36,8 +41,6 @@ sar -q CPU $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/cpu.txt &
 sar -q IO $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/io.txt &
 sar -q MEM $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/memo.txt &
 sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
-
-echo Y > /sys/module/damon_reclaim/parameters/enabled
 
 pushd /home/user/workspace/dama
 ./dama &
