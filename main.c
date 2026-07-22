@@ -7,7 +7,6 @@ int main(void)
 {
 	struct damon_info *info = alloc_damon_info();
 	bool enabled = false;
-	char *module_name;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -16,17 +15,34 @@ int main(void)
 		return -1;
 	}
 
-	info->damon_module = DAMON_MODULE;
-	if (module_to_name(info->damon_module, &module_name))
-		return -1;
+	info->param->action = PAGEOUT;
 
-	damon_set_enabled(module_name, true);
-	damon_is_enabled(module_name, &enabled);
+	if (damon_init())
+		goto err;
+
+	if (write_operation("paddr"))
+		goto err;
+
+	if (damon_write_action(info->param->action))
+		goto err;
+
+	if (damon_set_enabled(true))
+		goto err;
+
+	if (damon_is_enabled(&enabled))
+		goto err;
+
 	if (!enabled) {
 		pr_err("damon is not enabled\n");
-		return -1;
+		goto err;
 	}
+
+	if (damos_init())
+		goto err;
 
 	udamond_fn(info);
 	return 0;
+err:
+	pr_err("main: error\n");
+	return -1;
 }

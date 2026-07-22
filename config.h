@@ -11,8 +11,8 @@
 #define MiB (1024 * KiB)
 #define GiB (1024 * MiB)
 
-#define DAMON_RECLAIM (0)
-#define DAMON_LRU_SORT (1)
+#define PAGEOUT (0)
+#define LRU_PRIO (1)
 
 /* - End - */
 /* --------------------------------------- */
@@ -38,7 +38,7 @@
 #define WMARKS_MID (400)
 #define WMARKS_LOW (0)
 
-#define MIN_AGE (10UL * MIN_US)
+#define MIN_AGE (10UL * SEC_US)
 
 #define QUOTA_MS (10)
 #define QUOTA_SZ (128 * MiB)
@@ -47,8 +47,8 @@
 
 #define UDAMOND_SLEEP_US (5UL * MS_US)
 
-#define MIN_MIN_AGE (10UL * MIN_US)
-#define MAX_MIN_AGE (60UL * MIN_US)
+#define MIN_MIN_AGE (MIN_AGE)
+#define MAX_MIN_AGE (5UL * MIN_US)
 #define MAX_NO_DECREASE (10)
 
 #define ANON_REFAULT_WEIGHT (3)

@@ -1,218 +1,285 @@
-#include <errno.h>
 #include "core.h"
 #include "log.h"
 #include "util.h"
 #include "sysfs.h"
 
-int damon_read_ulong(const char *module_name, const char *param,
-		     unsigned long *val)
+int write_sample_us(unsigned long sample)
 {
-	char path[512];
-	int ret, len;
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/monitoring_attrs/intervals/sample_us";
+	return write_sysfs_ulong(path, sample);
+}
 
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
+int write_aggr_us(unsigned long aggr)
+{
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/monitoring_attrs/intervals/aggr_us";
+	return write_sysfs_ulong(path, aggr);
+}
 
-	ret = read_sysfs_ulong(path, val);
-	if (ret)
-		return ret;
+int write_intervals(unsigned long sample, unsigned long aggr)
+{
+	if (write_sample_us(sample))
+		return -1;
+	if (write_aggr_us(aggr))
+		return -1;
 
 	return 0;
 }
 
-int damon_read_bool(const char *module_name, const char *param, bool *val)
+char *action_to_str(unsigned int action)
 {
-	char path[512];
-	int ret, len;
-	char c;
-
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
-
-	ret = read_sysfs_char(path, &c);
-	if (ret)
-		return ret;
-
-	*val = strtobool(&c);
-
-	return 0;
+	if (action == PAGEOUT)
+		return "pageout";
+	else if (action == LRU_PRIO)
+		return "lru_prio";
+	else
+		return "none";
 }
 
-int damon_write_ulong(const char *module_name, const char *param,
-		      unsigned long val)
+int damon_init(void)
 {
-	char path[512];
-	int len;
-
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
-
-	return write_sysfs_ulong(path, val);
-}
-
-int damon_write_bool(const char *module_name, const char *param, bool val)
-{
-	char path[512];
-	int len;
-
-	len = snprintf(path, sizeof(path), "/sys/module/%s/parameters/%s",
-		       module_name, param);
-	if (len < 0 || len >= (int)sizeof(path)) {
-		return -ENAMETOOLONG;
-	}
-
-	return write_sysfs_bool(path, val);
-}
-
-int damon_is_enabled(const char *module_name, bool *enabled)
-{
+	char *nr_kdamonds = "/sys/kernel/mm/damon/admin/kdamonds/nr_kdamonds";
+	char *nr_contexts =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/nr_contexts";
+	char *nr_targets =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/targets/nr_targets";
+	char *nr_schemes =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/nr_schemes";
 	int ret;
-	bool val;
 
-	ret = damon_read_bool(module_name, "enabled", &val);
+	ret = write_sysfs_ulong(nr_kdamonds, 1);
 	if (ret)
 		return ret;
+	pr_info("nr_kdamonds: OK\n");
 
-	*enabled = val ? true : false;
-	return 0;
-}
+	ret = write_sysfs_ulong(nr_contexts, 1);
+	if (ret)
+		return ret;
+	pr_info("nr_contexts: OK\n");
 
-int damon_set_enabled(const char *module_name, bool on)
-{
-	return damon_write_bool(module_name, "enabled", on);
-}
+	ret = write_sysfs_ulong(nr_targets, 1);
+	if (ret)
+		return ret;
+	pr_info("nr_targets: OK\n");
 
-int damon_commit_params(const char *module_name)
-{
-	return damon_write_bool(module_name, "commit_inputs", true);
-}
-
-int read_damon_nr_applied(unsigned int damon_module,
-			  unsigned long *damon_nr_applied)
-{
-	char *module_name;
-
-	if (module_to_name(damon_module, &module_name))
-		return -1;
-
-	if (damon_module == DAMON_RECLAIM) {
-		if (damon_read_ulong(module_name, "bytes_reclaimed_regions",
-				     damon_nr_applied))
-			return -1;
-	} else if (damon_module == DAMON_LRU_SORT) {
-		if (damon_read_ulong(module_name,
-				     "bytes_lru_sorted_cold_regions",
-				     damon_nr_applied))
-			return -1;
-	}
+	ret = write_sysfs_ulong(nr_schemes, 1);
+	if (ret)
+		return ret;
+	pr_info("nr_schemes: OK\n");
 
 	return 0;
 }
 
-int damon_read_wmarks(char *module_name, struct wmarks *wmarks)
+int write_access_pattern_min_sz(unsigned long min)
 {
-	if (!module_name)
-		return 0;
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/sz/min";
+	return write_sysfs_ulong(path, min);
+}
 
-	if (damon_read_ulong(module_name, "wmarks_high", &wmarks->high))
+int write_access_pattern_max_sz(unsigned long max)
+{
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/sz/max";
+	return write_sysfs_ulong(path, max);
+}
+
+int write_access_pattern_sz(unsigned long min, unsigned long max)
+{
+	if (write_access_pattern_min_sz(min))
 		return -1;
-	if (damon_read_ulong(module_name, "wmarks_mid", &wmarks->mid))
-		return -1;
-	if (damon_read_ulong(module_name, "wmarks_low", &wmarks->low))
+	if (write_access_pattern_max_sz(max))
 		return -1;
 
 	return 0;
 }
 
-int damon_write_wmarks(char *module_name, struct wmarks wmarks)
+int write_access_pattern_nr_accesses_min(unsigned long min)
 {
-	if (!module_name)
-		return 0;
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/nr_accesses/min";
+	return write_sysfs_ulong(path, min);
+}
 
-	if (damon_write_ulong(module_name, "wmarks_high", wmarks.high))
+int write_access_pattern_nr_accesses_max(unsigned long max)
+{
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/nr_accesses/min";
+	return write_sysfs_ulong(path, max);
+}
+
+int write_access_pattern_nr_accesses(unsigned long min, unsigned long max)
+{
+	if (write_access_pattern_nr_accesses_min(min))
 		return -1;
-	if (damon_write_ulong(module_name, "wmarks_mid", wmarks.mid))
-		return -1;
-	if (damon_write_ulong(module_name, "wmarks_low", wmarks.low))
+	if (write_access_pattern_nr_accesses_max(max))
 		return -1;
 
 	return 0;
 }
 
-int module_to_min_age(unsigned int damon_module, char **min_age)
+int write_operation(const char *op)
 {
-	if (!min_age)
+	char *path =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/operations";
+
+	if (!op)
 		return -1;
 
-	if (damon_module == DAMON_RECLAIM)
-		*min_age = "min_age";
-	else if (damon_module == DAMON_LRU_SORT)
-		*min_age = "cold_min_age";
+	if (!strncmp(op, "vaddr", 5))
+		goto write;
+	else if (!strncmp(op, "paddr", 5))
+		goto write;
 	else
 		return -1;
-
-	return 0;
+write:
+	return write_sysfs_str(path, op);
 }
 
-int get_min_age(unsigned int damon_module, unsigned long *min_age)
+int damon_write_action(unsigned int action)
 {
-	char *min_age_name = NULL;
-	char *module_name = NULL;
+	char *path =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/action";
+	char *str = action_to_str(action);
 
-	if (module_to_name(damon_module, &module_name))
-		return -1;
-	if (module_to_min_age(damon_module, &min_age_name))
-		return -1;
-	if (damon_read_ulong(module_name, min_age_name, min_age))
+	if (!strncmp(str, "none", 4))
 		return -1;
 
-	return 0;
+	return write_sysfs_str(path, str);
 }
 
-int write_min_age(unsigned int damon_module, unsigned long min_age)
+int write_ds_pid(unsigned long pid)
 {
-	char *min_age_name = NULL;
-	char *module_name = NULL;
+	char *path =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/targets/0/pid_target";
 
-	if (module_to_name(damon_module, &module_name))
-		return -1;
-	if (module_to_min_age(damon_module, &min_age_name))
-		return -1;
-	if (damon_write_ulong(module_name, min_age_name, min_age))
-		return -1;
-	if (damon_commit_params(module_name))
-		return -1;
-
-	return 0;
+	return write_sysfs_ulong(path, pid);
 }
 
-int __damon_read_quota(char *module_name, unsigned long *quota_ms,
-		       unsigned long *quota_sz)
+/*
+ * write_ds_state - Write 'state' to DAMON_SYSFS.
+ *
+ * @state: state of kdamond [on, off, commit].
+ */
+int write_ds_state(const char *state)
 {
-	if (damon_read_ulong(module_name, "quota_ms", quota_ms))
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/state";
+	return write_sysfs_str(path, state);
+}
+
+int damon_is_enabled(bool *enabled)
+{
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/state";
+	char buf[8];
+	char *on = buf;
+
+	if (read_sysfs_str(path, &on, sizeof(buf)))
 		return -1;
-	if (damon_read_ulong(module_name, "quota_sz", quota_sz))
+
+	if (!strncmp(buf, "on", 2))
+		*enabled = true;
+	else
+		*enabled = false;
+
+	return 0;
+}
+
+int damon_set_enabled(bool on)
+{
+	if (on)
+		return write_ds_state("on");
+	else
+		return write_ds_state("off");
+}
+
+int damon_commit_params(void)
+{
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/state";
+	return write_sysfs_str(path, "commit");
+}
+
+int read_damon_sz_applied(unsigned long *damon_sz_applied)
+{
+	char *path =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/stats/sz_applied";
+
+	return read_sysfs_ulong(path, damon_sz_applied);
+}
+
+int damon_read_wmarks(struct wmarks *wmarks)
+{
+	char *high =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/high";
+	char *mid =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/mid";
+	char *low =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/low";
+
+	if (read_sysfs_ulong(high, &wmarks->high))
+		return -1;
+	if (read_sysfs_ulong(mid, &wmarks->mid))
+		return -1;
+	if (read_sysfs_ulong(low, &wmarks->low))
 		return -1;
 
 	return 0;
 }
 
-int damon_read_quota(char *module_name, unsigned long *quota_ms,
-		     unsigned long *quota_sz)
+int damon_write_wmarks(struct wmarks wmarks)
+{
+	char *high =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/high";
+	char *mid =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/mid";
+	char *low =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/low";
+
+	if (write_sysfs_ulong(high, wmarks.high))
+		return -1;
+	if (write_sysfs_ulong(mid, wmarks.mid))
+		return -1;
+	if (write_sysfs_ulong(low, wmarks.low))
+		return -1;
+
+	return 0;
+}
+
+int get_min_age(unsigned long *min_age)
+{
+	char *path =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/age/min";
+	return read_sysfs_ulong(path, min_age);
+}
+
+int write_min_age(unsigned long min_age)
+{
+	char *path =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/age/min";
+
+	if (write_sysfs_ulong(path, min_age))
+		return -1;
+	if (damon_commit_params())
+		return -1;
+
+	return 0;
+}
+
+int __damon_read_quota(unsigned long *quota_ms, unsigned long *quota_sz)
+{
+	char *ms =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/ms";
+	char *sz =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/bytes";
+
+	if (read_sysfs_ulong(ms, quota_ms))
+		return -1;
+	if (read_sysfs_ulong(sz, quota_sz))
+		return -1;
+
+	return 0;
+}
+
+int damon_read_quota(unsigned long *quota_ms, unsigned long *quota_sz)
 {
 	unsigned long tmp_ms, tmp_sz;
 	int ret;
 
-	ret = __damon_read_quota(module_name, &tmp_ms, &tmp_sz);
+	ret = __damon_read_quota(&tmp_ms, &tmp_sz);
 	if (ret)
 		return ret;
 
@@ -224,12 +291,16 @@ int damon_read_quota(char *module_name, unsigned long *quota_ms,
 	return 0;
 }
 
-int damon_write_quota(char *module_name, unsigned long quota_ms,
-		      unsigned long quota_sz)
+int damon_write_quota(unsigned long quota_ms, unsigned long quota_sz)
 {
-	if (damon_write_ulong(module_name, "quota_ms", quota_ms))
+	char *ms =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/ms";
+	char *sz =
+		"/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/bytes";
+
+	if (write_sysfs_ulong(ms, quota_ms))
 		return -1;
-	if (damon_write_ulong(module_name, "quota_sz", quota_sz))
+	if (write_sysfs_ulong(sz, quota_sz))
 		return -1;
 
 	return 0;
@@ -237,12 +308,10 @@ int damon_write_quota(char *module_name, unsigned long quota_ms,
 
 int damos_init(void)
 {
-	unsigned int damon_module = DAMON_MODULE;
 	unsigned long min_age = MIN_AGE;
 	struct wmarks wmarks;
 	unsigned long quota_ms = QUOTA_MS;
 	unsigned long quota_sz = QUOTA_SZ;
-	char *module_name = NULL;
 
 	if (SCHEME_WATERMARKS) {
 		wmarks.high = 1000;
@@ -254,16 +323,21 @@ int damos_init(void)
 		wmarks.low = WMARKS_LOW;
 	}
 
-	if (module_to_name(damon_module, &module_name))
+	if (write_min_age(min_age))
 		return -1;
-	if (write_min_age(damon_module, min_age))
+	pr_info("write min_age: OK\n");
+
+	if (damon_write_wmarks(wmarks))
 		return -1;
-	if (damon_write_wmarks(module_name, wmarks))
+	pr_info("write wmarks: OK\n");
+
+	if (damon_write_quota(quota_ms, quota_sz))
 		return -1;
-	if (damon_write_quota(module_name, quota_ms, quota_sz))
+	pr_info("write quota: OK\n");
+
+	if (damon_commit_params())
 		return -1;
-	if (damon_commit_params(module_name))
-		return -1;
+	pr_info("commit: OK\n");
 
 	return 0;
 }

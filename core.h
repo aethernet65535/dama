@@ -24,7 +24,7 @@ struct wmarks {
 };
 
 struct damos_param {
-	unsigned int damon_module;
+	unsigned int action;
 	unsigned long min_age;
 	struct wmarks wmarks;
 };
@@ -82,11 +82,12 @@ struct psi {
 };
 
 struct damon_info {
-	unsigned int damon_module;
 	struct damos_param *param;
 	struct mas_calc *mas_calc;
 };
 
-int module_to_name(unsigned int damon_module, char **module_name);
+bool is_supported_action(unsigned int action);
 void *alloc_damon_info(void);
+int inc_min_age(unsigned long step, unsigned long *min_age);
+int dec_min_age(unsigned long step, unsigned long *min_age);
 int udamond_fn(struct damon_info *info);

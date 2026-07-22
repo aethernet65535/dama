@@ -65,6 +65,33 @@ int write_sysfs_bool(const char *path, bool val)
 	return 0;
 }
 
+int write_sysfs_str(const char *path, const char *val)
+{
+	FILE *fp = fopen(path, "w");
+	int ret;
+
+	if (!val) {
+		pr_err("not valid string");
+		return -1;
+	}
+
+	if (!fp) {
+		pr_err("open failed\n");
+		return -1;
+	}
+
+	ret = fputs(val, fp);
+	if (ret < 0) {
+		pr_err("write failed\n");
+		fclose(fp);
+		return -1;
+	}
+
+	fclose(fp);
+
+	return 0;
+}
+
 int read_sysfs_ulong(const char *path, unsigned long *val)
 {
 	FILE *fp = fopen(path, "r");
@@ -125,6 +152,29 @@ int read_sysfs_char(const char *path, char *val)
 	}
 
 	*val = (char)c;
+
+	fclose(fp);
+	return 0;
+}
+
+int read_sysfs_str(const char *path, char **val, size_t max_len)
+{
+	FILE *fp = fopen(path, "r");
+	if (!fp) {
+		pr_err("open failed\n");
+		return -1;
+	}
+
+	if (!fgets(*val, max_len, fp)) {
+		pr_err("read failed\n");
+		fclose(fp);
+		return -1;
+	}
+
+	size_t len = strlen(*val);
+	if (len > 0 && (*val)[len - 1] == '\n') {
+		(*val)[len - 1] = '\0';
+	}
 
 	fclose(fp);
 	return 0;
