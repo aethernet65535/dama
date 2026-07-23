@@ -22,6 +22,42 @@ int main(void)
 	if (damon_init())
 		goto err;
 
+	/* Access Pattern */
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/monitoring_attrs/intervals/sample_us", 5000))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/monitoring_attrs/intervals/aggr_us", 100000))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/sz/min", 4096))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/sz/max", 18446744073709551615UL))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/nr_accesses/min", 0))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/nr_accesses/max", 0))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/age/min", 120))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/access_pattern/age/max", 18446744073709551615UL))
+		goto err;
+
+	/* Quota */
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/ms", 10))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/bytes", 134217728))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/reset_interval_ms", 1000))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/weights/sz_permil", 0))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/weights/nr_accesses_permil", 0))
+		goto err;
+	if (sysfs_write_ulong("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/quotas/weights/age_permil", 1000))
+		goto err;
+
+	/* Watermark */
+	if (sysfs_write_str("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/metric", "none"))
+		goto err;
+
 	if (damon_write_operation("paddr"))
 		goto err;
 

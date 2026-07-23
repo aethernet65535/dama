@@ -38,7 +38,7 @@
 #define WMARKS_MID (400)
 #define WMARKS_LOW (0)
 
-#define MIN_AGE (10UL * SEC_US)
+#define MIN_AGE (1UL * SEC_US)
 
 #define QUOTA_MS (10)
 #define QUOTA_SZ (128 * MiB)
