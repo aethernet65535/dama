@@ -71,14 +71,12 @@ int dec_min_age(unsigned long step, unsigned long *min_age)
 	return 0;
 }
 
-
 /*
  * The Heart of the DAMA.
  */
 int udamond_fn(struct damon_info *info)
 {
 	char *action_name = NULL;
-	unsigned long next_min_age;
 	unsigned long memtotal;
 	unsigned long memfree;
 	unsigned int action = info->param->action;
@@ -121,12 +119,8 @@ int udamond_fn(struct damon_info *info)
 			goto rest;
 		}
 
-		if (min_age_calc(info->mas_calc, action))
+		if (info->udamond_action((void*)info))
 			goto done;
-
-		next_min_age = info->mas_calc->result.next_min_age;
-		if (next_min_age)
-			damon_write_min_age(next_min_age);
 
 	rest:
 		if (SCHEME_WATERMARKS) {

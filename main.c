@@ -1,5 +1,6 @@
 #include "core.h"
 #include "damon.h"
+#include "pageout_min_age.h"
 #include "sysfs.h"
 #include "log.h"
 
@@ -16,6 +17,7 @@ int main(void)
 	}
 
 	info->param->action = PAGEOUT;
+	info->udamond_action = pageout_min_age_autotune;
 
 	if (damon_init())
 		goto err;

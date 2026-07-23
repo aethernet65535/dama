@@ -252,6 +252,7 @@ int reclaim_min_age_calc(struct mas_calc *ctx)
 		goto err;
 	}
 	ctx->result.next_min_age = next_min_age;
+	ctx->result.dirty = true;
 fade:
 	fade_mas(ctx);
 record:
@@ -269,4 +270,24 @@ int min_age_calc(struct mas_calc *ctx, unsigned int action)
 		return -1;
 	else
 		return -1;
+}
+
+int pageout_min_age_autotune(void *ctx)
+{
+	struct damon_info *di = (struct damon_info*)ctx;
+
+	if (min_age_calc(di->mas_calc, di->param->action))
+		goto err;
+
+	if (!di->mas_calc->result.dirty)
+		goto done;
+
+	if (damon_write_min_age(di->mas_calc->result.next_min_age))
+		goto err;
+
+	di->mas_calc->result.dirty = false;
+done:
+	return 0;
+err:
+	return -1;
 }

@@ -35,6 +35,7 @@ struct mas_calc {
 		unsigned long nr_dec;
 		unsigned long next_min_age;
 		bool fade;
+		bool dirty;
 	} result;
 
 	/* State */
@@ -82,6 +83,8 @@ struct psi {
 };
 
 struct damon_info {
+	int (*udamond_action)(void *ctx);
+
 	struct damos_param *param;
 	struct mas_calc *mas_calc;
 };
