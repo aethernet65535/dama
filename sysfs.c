@@ -2,7 +2,7 @@
 #include "sysfs.h"
 #include "log.h"
 
-int write_sysfs_ulong(const char *path, unsigned long val)
+int sysfs_write_ulong(const char *path, unsigned long val)
 {
 	FILE *fp = fopen(path, "w");
 	int ret;
@@ -23,7 +23,7 @@ int write_sysfs_ulong(const char *path, unsigned long val)
 	return 0;
 }
 
-int write_sysfs_int(const char *path, int val)
+int sysfs_write_int(const char *path, int val)
 {
 	FILE *fp = fopen(path, "w");
 	int ret;
@@ -44,7 +44,7 @@ int write_sysfs_int(const char *path, int val)
 	return 0;
 }
 
-int write_sysfs_bool(const char *path, bool val)
+int sysfs_write_bool(const char *path, bool val)
 {
 	FILE *fp = fopen(path, "w");
 	int ret;
@@ -65,7 +65,7 @@ int write_sysfs_bool(const char *path, bool val)
 	return 0;
 }
 
-int write_sysfs_str(const char *path, const char *val)
+int sysfs_write_str(const char *path, const char *val)
 {
 	FILE *fp = fopen(path, "w");
 	int ret;
@@ -92,7 +92,7 @@ int write_sysfs_str(const char *path, const char *val)
 	return 0;
 }
 
-int read_sysfs_ulong(const char *path, unsigned long *val)
+int sysfs_read_ulong(const char *path, unsigned long *val)
 {
 	FILE *fp = fopen(path, "r");
 	int ret;
@@ -113,7 +113,7 @@ int read_sysfs_ulong(const char *path, unsigned long *val)
 	return 0;
 }
 
-int read_sysfs_int(const char *path, int *val)
+int sysfs_read_int(const char *path, int *val)
 {
 	FILE *fp = fopen(path, "r");
 	int ret;
@@ -134,7 +134,7 @@ int read_sysfs_int(const char *path, int *val)
 	return 0;
 }
 
-int read_sysfs_char(const char *path, char *val)
+int sysfs_read_char(const char *path, char *val)
 {
 	FILE *fp = fopen(path, "r");
 	int c;
@@ -157,7 +157,7 @@ int read_sysfs_char(const char *path, char *val)
 	return 0;
 }
 
-int read_sysfs_str(const char *path, char **val, size_t max_len)
+int sysfs_read_str(const char *path, char **val, size_t max_len)
 {
 	FILE *fp = fopen(path, "r");
 	if (!fp) {

@@ -3,14 +3,14 @@
 #include <string.h>
 #include <stdbool.h>
 
-int write_sysfs_ulong(const char *path, unsigned long val);
-int write_sysfs_int(const char *path, int val);
-int write_sysfs_bool(const char *path, bool val);
-int write_sysfs_str(const char *path, const char *val);
-int read_sysfs_ulong(const char *path, unsigned long *val);
-int read_sysfs_int(const char *path, int *val);
-int read_sysfs_char(const char *path, char *val);
-int read_sysfs_str(const char *path, char **val, size_t max_len);
+int sysfs_write_ulong(const char *path, unsigned long val);
+int sysfs_write_int(const char *path, int val);
+int sysfs_write_bool(const char *path, bool val);
+int sysfs_write_str(const char *path, const char *val);
+int sysfs_read_ulong(const char *path, unsigned long *val);
+int sysfs_read_int(const char *path, int *val);
+int sysfs_read_char(const char *path, char *val);
+int sysfs_read_str(const char *path, char **val, size_t max_len);
 int read_meminfo(unsigned long *memtotal, unsigned long *memfree,
 		 unsigned long *inactive_anon, unsigned long *inactive_file);
 int read_psi_cpu(struct psi *psi);

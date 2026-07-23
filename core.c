@@ -40,7 +40,7 @@ int inc_min_age(unsigned long step, unsigned long *min_age)
 {
 	if (!step)
 		return -1;
-	if (get_min_age(min_age))
+	if (damon_read_min_age(min_age))
 		return -1;
 
 	if (*min_age + step < *min_age)
@@ -57,7 +57,7 @@ int dec_min_age(unsigned long step, unsigned long *min_age)
 {
 	if (!step)
 		return -1;
-	if (get_min_age(min_age))
+	if (damon_read_min_age(min_age))
 		return -1;
 
 	/* Underflow */
@@ -126,7 +126,7 @@ int udamond_fn(struct damon_info *info)
 
 		next_min_age = info->mas_calc->result.next_min_age;
 		if (next_min_age)
-			write_min_age(next_min_age);
+			damon_write_min_age(next_min_age);
 
 	rest:
 		if (SCHEME_WATERMARKS) {

@@ -20,7 +20,7 @@ int main(void)
 	if (damon_init())
 		goto err;
 
-	if (write_operation("paddr"))
+	if (damon_write_operation("paddr"))
 		goto err;
 
 	if (damon_write_action(info->param->action))

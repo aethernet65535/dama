@@ -19,6 +19,9 @@ unsigned long update_mas(struct mas_calc *ctx)
 	unsigned long d_kswapd_reclaimed = 0;
 	unsigned long d_direct_reclaimed = 0;
 
+	const char *sz_applied = "/sys/kernel/mm/damon/admin/kdamonds/0/"
+				 "contexts/0/schemes/0/stats/sz_applied";
+
 	ctx->state.anon_weight = ANON_REFAULT_WEIGHT;
 	ctx->state.file_weight = FILE_REFAULT_WEIGHT;
 
@@ -26,7 +29,7 @@ unsigned long update_mas(struct mas_calc *ctx)
 		goto err;
 	if (read_steal(&total_kswapd_reclaimed, &total_direct_reclaimed))
 		goto err;
-	if (read_damon_sz_applied(&total_nr_damon_applied))
+	if (sysfs_read_ulong(sz_applied, &total_nr_damon_applied))
 		goto err;
 
 	if (!ctx->state.init)
@@ -81,7 +84,7 @@ int reclaim_step_calc(struct mas_calc *ctx, int action)
 
 	refault_weighted = anon_weighted + file_weighted;
 
-	if (get_min_age(&min_age))
+	if (damon_read_min_age(&min_age))
 		goto err;
 
 	/* 
@@ -225,7 +228,7 @@ int reclaim_min_age_calc(struct mas_calc *ctx)
 		goto record;
 	if (!pgsteal && !damon_reclaimed)
 		goto record;
-	if (get_min_age(&min_age))
+	if (damon_read_min_age(&min_age))
 		goto err;
 	if (reclaim_step_calc(ctx, PAGEOUT))
 		goto err;
