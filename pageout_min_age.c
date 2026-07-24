@@ -29,6 +29,9 @@ unsigned long update_mas(struct mas_calc *ctx)
 		goto err;
 	if (read_steal(&total_kswapd_reclaimed, &total_direct_reclaimed))
 		goto err;
+
+	if (damon_update_stats())
+		return -1;
 	if (sysfs_read_ulong(sz_applied, &total_nr_damon_applied))
 		goto err;
 

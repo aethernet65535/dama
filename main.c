@@ -3,8 +3,9 @@
 #include "pageout_min_age.h"
 #include "sysfs.h"
 #include "log.h"
+#include "arg.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	struct damon_info *info = alloc_damon_info();
 	bool enabled = false;
@@ -19,6 +20,7 @@ int main(void)
 	info->param->action = PAGEOUT;
 	info->udamond_action = pageout_min_age_autotune;
 
+	damon_close();
 	if (damon_init())
 		goto err;
 
@@ -55,18 +57,25 @@ int main(void)
 		goto err;
 
 	/* Watermark */
-	if (sysfs_write_str("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/metric", "none"))
+	if (sysfs_write_str("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/metric", "free_mem_rate"))
+		goto err;
+	if (sysfs_write_str("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/interval_us", "5000000"))
+		goto err;
+	if (sysfs_write_str("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/high", "600"))
+		goto err;
+	if (sysfs_write_str("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/mid", "500"))
+		goto err;
+	if (sysfs_write_str("/sys/kernel/mm/damon/admin/kdamonds/0/contexts/0/schemes/0/watermarks/low", "10"))
 		goto err;
 
 	if (damon_write_operation("paddr"))
 		goto err;
-
 	if (damon_write_action(info->param->action))
 		goto err;
-
+	if (arg_exec(argc, argv))
+		goto err;
 	if (damon_set_enabled(true))
 		goto err;
-
 	if (damon_is_enabled(&enabled))
 		goto err;
 

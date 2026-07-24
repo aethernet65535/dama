@@ -38,14 +38,14 @@
 #define WMARKS_MID (400)
 #define WMARKS_LOW (0)
 
-#define MIN_AGE (1UL * SEC_US)
+#define MIN_AGE (2 * MIN_US)
 
 #define QUOTA_MS (10)
 #define QUOTA_SZ (128 * MiB)
 
 /* -- End -- */
 
-#define UDAMOND_SLEEP_US (5UL * MS_US)
+#define UDAMOND_SLEEP_US (5UL * SEC_US)
 
 #define MIN_MIN_AGE (MIN_AGE)
 #define MAX_MIN_AGE (5UL * MIN_US)

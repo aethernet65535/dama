@@ -2,6 +2,7 @@
 #include "log.h"
 #include "util.h"
 #include "sysfs.h"
+#include "damon.h"
 
 char *action_to_str(unsigned int action)
 {
@@ -11,6 +12,14 @@ char *action_to_str(unsigned int action)
 		return "lru_prio";
 	else
 		return "none";
+}
+
+int damon_close(void)
+{
+	char *nr_kdamonds = "/sys/kernel/mm/damon/admin/kdamonds/nr_kdamonds";
+
+	damon_write_state("off");
+	return sysfs_write_ulong(nr_kdamonds, 0);
 }
 
 int damon_init(void)
@@ -60,6 +69,13 @@ int damon_write_operation(const char *op)
 	return sysfs_write_str(path, op);
 }
 
+int damon_write_pid(unsigned long pid)
+{
+	const char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/"
+			   "contexts/0/targets/0/pid_target";
+	return sysfs_write_ulong(path, pid);
+}
+
 int damon_write_action(unsigned int action)
 {
 	const char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/"
@@ -101,6 +117,12 @@ int damon_commit_params(void)
 {
 	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/state";
 	return sysfs_write_str(path, "commit");
+}
+
+int damon_update_stats(void)
+{
+	char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/state";
+	return sysfs_write_str(path, "update_schemes_stats");
 }
 
 int damon_read_wmarks(struct wmarks *wmarks)
