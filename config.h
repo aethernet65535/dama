@@ -38,7 +38,8 @@
 #define WMARKS_MID (400)
 #define WMARKS_LOW (0)
 
-#define MIN_AGE (2 * MIN_US)
+/* Min Age = time(ms) / aggr_interval */
+#define MIN_AGE ((2 * MIN_MS) / 100)
 
 #define QUOTA_MS (10)
 #define QUOTA_SZ (128 * MiB)

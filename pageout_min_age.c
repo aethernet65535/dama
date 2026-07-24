@@ -52,17 +52,19 @@ update:
 	ctx->total.refault_anon = total_refault_anon;
 	ctx->total.refault_file = total_refault_file;
 
+	ctx->remaining.damon += d_damon_reclaimed;
+	ctx->remaining.pgsteal += d_pgsteal;
+
+	/* Avoid modifying the 'metirc.*' value before initialization. */
+	if (!ctx->state.init)
+		return MAS_NEED_INIT;
+
 	ctx->metric.nr_damon_applied += d_damon_reclaimed;
 	ctx->metric.kswapd_reclaimed += d_kswapd_reclaimed;
 	ctx->metric.direct_reclaimed += d_direct_reclaimed;
 	ctx->metric.refault_anon += total_refault_anon - ctx->last.refault_anon;
 	ctx->metric.refault_file += total_refault_file - ctx->last.refault_file;
 
-	ctx->remaining.damon += d_damon_reclaimed;
-	ctx->remaining.pgsteal += d_pgsteal;
-
-	if (!ctx->state.init)
-		return MAS_NEED_INIT;
 	return 0;
 err:
 	return MAS_ERR;
