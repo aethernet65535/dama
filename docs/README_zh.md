@@ -25,9 +25,9 @@ $ sudo ./dama
 大部分配置都需要在 `config.h` 中修改。大部分常用的参数会在之后支持作为命令行参数传入 DAMA。
 
 #### 目前支持的命令行参数
-**`--operation`：**指定 DAMON 监控的地址空间类型。
+**`--operation`：** 指定 DAMON 监控的地址空间类型。
 - **选项：** `paddr` 和 `vaddr`。
-- **注：**目前暂不支持 `fvaddr`。
+- **注：**目前暂不支持 `fvaddr`。<br>
 **`--target_pid`:** 指定 VADDR 的 DAMON 要监控的目标进程 PID。
 
 ##### 使用例子
