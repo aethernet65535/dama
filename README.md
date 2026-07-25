@@ -46,4 +46,3 @@ The following is an example of monitoring a `stress-ng-vm` process:
 # stress-ng --vm 1 --vm-bytes 1G --vm-hang 3600 --vm-keep --timeout=5m &
 # ./dama --operation=vaddr --target_pid=$(pidof stress-ng-vm)
 ```
-```
