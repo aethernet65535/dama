@@ -44,6 +44,6 @@ $ sudo ./dama
 以下为监控一个 `stress-ng-vm` 的例子：
 
 ```sh
-# stress-ng --vm 1 --vm-bytes 1G --vm-hang 3600 --vm-keep --timeout=5m &
-# ./dama --operation=vaddr --target_pid=$(pidof stress-ng-vm)
+$ stress-ng --vm 1 --vm-bytes 1G --vm-hang 3600 --vm-keep --timeout=5m &
+$ sudo ./dama --operation=vaddr --target_pid=$(pidof stress-ng-vm)
 ```

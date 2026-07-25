@@ -19,10 +19,10 @@ Since DAMA deeply relies on the Linux kernel's DAMON mechanism and specific file
 
 DAMA does not use overly complex toolchains and can be simply built using `make`.
 ```sh
-$ git clone [https://github.com/aethernet65535/dama.git](https://github.com/aethernet65535/dama.git)
+$ git clone https://github.com/aethernet65535/dama.git
 $ cd dama
-$make$ sudo ./dama
-
+$ make
+$ sudo ./dama
 ```
 
 ### Configuration
@@ -43,6 +43,6 @@ Most configurations need to be modified in `config.h`. Most commonly used parame
 The following is an example of monitoring a `stress-ng-vm` process:
 
 ```sh
-# stress-ng --vm 1 --vm-bytes 1G --vm-hang 3600 --vm-keep --timeout=5m &
-# ./dama --operation=vaddr --target_pid=$(pidof stress-ng-vm)
+$ stress-ng --vm 1 --vm-bytes 1G --vm-hang 3600 --vm-keep --timeout=5m &
+$ sudo ./dama --operation=vaddr --target_pid=$(pidof stress-ng-vm)
 ```
