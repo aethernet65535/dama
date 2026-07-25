@@ -7,7 +7,7 @@ MIN_SEC=60
 HOUR_SEC=$((60*MIN_SEC))
 
 DIR_NAME="rec-dama"
-DATE="2026-07-18-0001"
+DATE="2026-07-25-0001"
 TEST_SECS=$((24*HOUR_SEC))
 INTERVAL_SECS=$((5))
 SAMPLING_TIMES=$(($TEST_SECS/$INTERVAL_SECS))
@@ -43,7 +43,7 @@ sar -q MEM $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/memo.txt 
 sar -B $INTERVAL_SECS $SAMPLING_TIMES >> ./report/$DIR_NAME\-$DATE/fault.txt &
 
 pushd /home/user/workspace/dama
-./dama &
+./dama --operation=vaddr --target_pid=$(pidof ollama) &
 popd
 
 python ./ollama/llm.py
