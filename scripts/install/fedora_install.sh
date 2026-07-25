@@ -16,6 +16,8 @@ ollama \
 sysstat \
 python3 \
 python \
+pip3 \
+pip \
 rg
 
 pip install ollama
