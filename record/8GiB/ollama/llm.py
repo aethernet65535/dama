@@ -1,7 +1,7 @@
 import ollama
 import time
 
-READING_SPEED_WORDS_PER_MIN = 133 # B2 Reading Speed
+READING_SPEED_WORDS_PER_MIN = 50 # Simulate Reading Disorder
 
 def get_ollama_response(model, messages):
     """Call Ollama to get a response"""
