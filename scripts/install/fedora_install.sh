@@ -18,6 +18,8 @@ python3 \
 python \
 rg
 
+pip install ollama
+
 systemctl enable --now ollama
 ollama pull gemma3:4b
 
