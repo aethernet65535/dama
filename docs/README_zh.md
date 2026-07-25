@@ -9,7 +9,7 @@ DAMA **几乎**所有功能都是通过操作 [DAMON_SYSFS](https://docs.kernel.
 
 ## 环境要求
 由于 DAMA 深度依赖 Linux 内核的 DAMON 机制以及特定的文件系统路径：
-* **操作系统：** 仅支持 **Linux**（Windows、macOS 以及部分非主流发行版无法运行）。
+* **操作系统：** **Linux**（Windows、macOS 以及部分非主流发行版很可能无法运行）。
 * **内核版本：** 需要你的 Linux 已启用 DAMON 并支持 DAMON_SYSFS。
 
 ## 快速开始
