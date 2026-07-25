@@ -14,7 +14,9 @@ make \
 gcc \
 ollama \
 sysstat \
-python3
+python3 \
+python \
+rg
 
 systemctl enable --now ollama
 ollama pull gemma3:4b
