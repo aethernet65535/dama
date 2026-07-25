@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -O3
 TARGET = dama
 OBJS = main.o core.o sysfs.o damon.o util.o pageout_min_age.o arg.o
 

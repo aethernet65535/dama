@@ -49,7 +49,7 @@
 #define UDAMOND_SLEEP_US (5UL * SEC_US)
 
 #define MIN_MIN_AGE (MIN_AGE)
-#define MAX_MIN_AGE (5UL * MIN_US)
+#define MAX_MIN_AGE (10UL * MIN_US)
 #define MAX_NO_DECREASE (10)
 
 #define ANON_REFAULT_WEIGHT (3)
