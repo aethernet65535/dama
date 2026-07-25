@@ -27,7 +27,7 @@ $ sudo ./dama
 #### 目前支持的命令行参数
 **`--operation`：** 指定 DAMON 监控的地址空间类型。
 - **选项：** `paddr` 和 `vaddr`。
-- **注：**目前暂不支持 `fvaddr`。
+- **注：** 目前暂不支持 `fvaddr`。
 
 **`--target_pid`:** 指定 VADDR 的 DAMON 要监控的目标进程 PID。
 
