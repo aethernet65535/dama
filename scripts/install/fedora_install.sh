@@ -16,7 +16,7 @@ ollama \
 sysstat \
 python3
 
-ollama serve
+systemctl enable --now ollama
 ollama pull gemma3:4b
 
 systemctl enable --now sysstat
