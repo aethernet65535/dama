@@ -6,16 +6,7 @@
 #include "pageout_min_age.h"
 
 unsigned long ticks = 0;
-
-bool is_supported_action(unsigned int action)
-{
-	if (action == PAGEOUT)
-		return true;
-	else if (action == LRU_PRIO)
-		return false;
-	else
-		return false;
-}
+bool running = false;
 
 void *alloc_damon_info(void)
 {
@@ -76,10 +67,9 @@ int dec_min_age(unsigned long step, unsigned long *min_age)
  */
 int udamond_fn(struct damon_info *info)
 {
-	char *action_name = NULL;
 	unsigned long memtotal;
 	unsigned long memfree;
-	unsigned int action = info->param->action;
+	char *action = info->param->action;
 	unsigned long quota_ms = 0;
 	unsigned long quota_sz = 0;
 	bool in_wmarks = false;
@@ -88,16 +78,18 @@ int udamond_fn(struct damon_info *info)
 
 	if (!info)
 		goto done;
-	if (!is_supported_action(action))
-		goto done;
 	if (damon_read_quota(&quota_ms, &quota_sz))
 		goto done;
-	action_name = action_to_str(action);
 
-	pr_time("udamond start %s\n", action_name);
+	pr_time("udamond start %s\n", action);
 
 	while (true) {
 		ticks++;
+
+		if (!running) {
+			damon_close();
+			goto done;
+		}
 
 		if (read_meminfo(&memtotal, &memfree, NULL, NULL))
 			goto done;
@@ -123,9 +115,9 @@ int udamond_fn(struct damon_info *info)
 			goto done;
 
 	rest:
-		if (SCHEME_WATERMARKS) {
+		if (DAMOS_ONLY_WATERMARKS) {
 			if (!in_wmarks) {
-				damon_write_quota(1, 1);
+				damon_write_action("stats");
 			} else {
 				if (damon_read_quota(&quota_ms, &quota_sz))
 					goto done;
@@ -135,7 +127,7 @@ int udamond_fn(struct damon_info *info)
 		usleep(UDAMOND_SLEEP_US);
 	}
 done:
-	pr_time("udamond stop %s\n", action_name);
+	pr_time("udamond stop %s\n", action);
 	free(info);
 	return 0;
 }

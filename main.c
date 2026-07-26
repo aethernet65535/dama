@@ -1,3 +1,4 @@
+#include <signal.h>
 #include "core.h"
 #include "damon.h"
 #include "pageout_min_age.h"
@@ -5,22 +6,29 @@
 #include "log.h"
 #include "arg.h"
 
+extern bool running;
+
+void handle_sigint(int sig)
+{
+	running = false;
+}
+
 int main(int argc, char *argv[])
 {
 	struct damon_info *info = alloc_damon_info();
 	bool enabled = false;
 
 	setvbuf(stdout, NULL, _IONBF, 0);
+	signal(SIGINT, handle_sigint);
 
 	if (!info) {
 		pr_err("ENOMEM failed\n");
 		return -1;
 	}
 
-	info->param->action = PAGEOUT;
+	info->param->action = "pageout";
 	info->udamond_action = pageout_min_age_autotune;
 
-	damon_close();
 	if (damon_init())
 		goto err;
 
@@ -83,6 +91,8 @@ int main(int argc, char *argv[])
 		pr_err("damon is not enabled\n");
 		goto err;
 	}
+
+	running = true;
 
 	if (damos_init())
 		goto err;

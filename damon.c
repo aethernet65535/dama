@@ -4,16 +4,6 @@
 #include "sysfs.h"
 #include "damon.h"
 
-char *action_to_str(unsigned int action)
-{
-	if (action == PAGEOUT)
-		return "pageout";
-	else if (action == LRU_PRIO)
-		return "lru_prio";
-	else
-		return "none";
-}
-
 int damon_close(void)
 {
 	char *nr_kdamonds = "/sys/kernel/mm/damon/admin/kdamonds/nr_kdamonds";
@@ -76,16 +66,11 @@ int damon_write_pid(unsigned long pid)
 	return sysfs_write_ulong(path, pid);
 }
 
-int damon_write_action(unsigned int action)
+int damon_write_action(char *action)
 {
 	const char *path = "/sys/kernel/mm/damon/admin/kdamonds/0/"
 			   "contexts/0/schemes/0/action";
-	char *action_str = action_to_str(action);
-
-	if (!strncmp(action_str, "none", 4))
-		return -1;
-
-	return sysfs_write_str(path, action_str);
+	return sysfs_write_str(path, action);
 }
 
 int damon_is_enabled(bool *enabled)
@@ -237,7 +222,7 @@ int damos_init(void)
 	unsigned long quota_ms = QUOTA_MS;
 	unsigned long quota_sz = QUOTA_SZ;
 
-	if (SCHEME_WATERMARKS) {
+	if (DAMOS_ONLY_WATERMARKS) {
 		wmarks.high = 1000;
 		wmarks.mid = 1000;
 		wmarks.low = 0;

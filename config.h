@@ -11,9 +11,6 @@
 #define MiB (1024 * KiB)
 #define GiB (1024 * MiB)
 
-#define PAGEOUT (0)
-#define LRU_PRIO (1)
-
 /* - End - */
 /* --------------------------------------- */
 /* - Configable - but better don't touch - */
@@ -28,7 +25,7 @@
 
 #define CONFIG_LOG_ENABLED (1)
 #define CONFIG_DEBUG_ENABLED (1)
-#define SCHEME_WATERMARKS (1)
+#define DAMOS_ONLY_WATERMARKS (1)
 
 /* -- Sysfs Param -- */
 

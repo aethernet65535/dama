@@ -70,7 +70,7 @@ err:
 	return MAS_ERR;
 }
 
-int reclaim_step_calc(struct mas_calc *ctx, int action)
+int reclaim_step_calc(struct mas_calc *ctx)
 {
 	unsigned long damon_reclaimed = ctx->metric.nr_damon_applied;
 	unsigned long kswapd_reclaimed = ctx->metric.kswapd_reclaimed;
@@ -235,7 +235,7 @@ int reclaim_min_age_calc(struct mas_calc *ctx)
 		goto record;
 	if (damon_read_min_age(&min_age))
 		goto err;
-	if (reclaim_step_calc(ctx, PAGEOUT))
+	if (reclaim_step_calc(ctx))
 		goto err;
 
 	nr_inc = ctx->result.nr_inc;
@@ -267,21 +267,11 @@ err:
 	return -1;
 }
 
-int min_age_calc(struct mas_calc *ctx, unsigned int action)
-{
-	if (action == PAGEOUT)
-		return reclaim_min_age_calc(ctx);
-	else if (action == LRU_PRIO)
-		return -1;
-	else
-		return -1;
-}
-
 int pageout_min_age_autotune(void *ctx)
 {
 	struct damon_info *di = (struct damon_info*)ctx;
 
-	if (min_age_calc(di->mas_calc, di->param->action))
+	if (reclaim_min_age_calc(di->mas_calc))
 		goto err;
 
 	if (!di->mas_calc->result.dirty)

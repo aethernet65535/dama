@@ -24,7 +24,7 @@ struct wmarks {
 };
 
 struct damos_param {
-	unsigned int action;
+	char *action;
 	unsigned long min_age;
 	struct wmarks wmarks;
 };
@@ -89,7 +89,6 @@ struct damon_info {
 	struct mas_calc *mas_calc;
 };
 
-bool is_supported_action(unsigned int action);
 void *alloc_damon_info(void);
 int inc_min_age(unsigned long step, unsigned long *min_age);
 int dec_min_age(unsigned long step, unsigned long *min_age);
